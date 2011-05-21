@@ -33,7 +33,7 @@ require File.join(File.dirname(__FILE__), '../lib/brig/builder')
 
 
 target_dir = ARGV.find { |a| ! a.match(/^-/) }
-verbose = (ARGV | %w[ -v --verbose ]).length > 0
+verbose = (ARGV & %w[ -v --verbose ]).length > 0
 
 Brig.build_chroot(target_dir, :verbose => verbose)
 

@@ -25,80 +25,106 @@ require 'fileutils'
 
 module Brig
 
-  def self.tell(message)
-    puts(message) if @verbose
-  end
-
-  def self.grep(file, regex)
-    File.readlines(file).select { |l| regex.match(l) }.join("\n")
-  end
-
-  def self.split_ldd_output(out)
-    out.split(/[\n\t \r]/).select { |e| e.match(/^\/.+[^:]$/) }
-  end
-
-  # TODO
-  #
   def self.build_chroot(target_dir, opts={})
 
-    @verbose = opts[:verbose]
+    Brig::Builder.new.build_chroot(target_dir, opts)
+  end
 
-    target_dir = File.expand_path(target_dir)
+  class Builder
 
-    FileUtils.mkdir(target_dir)
+    def build_chroot(target_dir, opts)
 
-    %w[
-      etc
-      bin
-      usr/bin
-      usr/lib/system
-    ].each do |dir|
-      FileUtils.mkdir_p(File.join(target_dir, dir))
-    end
+      @verbose = opts[:verbose]
 
-    File.open(File.join(target_dir, 'etc/passwd'), 'wb') do |f|
-      f.puts 'root:*:0:0:System Administrator:/var/root:/bin/sh'
-    end
-    File.open(File.join(target_dir, 'etc/group'), 'wb') do |f|
-      #f.puts 'root:*:0:0:System Administrator:/var/root:/bin/sh'
-    end
+      target_dir = File.expand_path(target_dir)
 
-    apps = %w[
-      /usr/lib/dyld
-      bash
-      ls mkdir mv pwd rm
-      ruby
-    ] + (opts[:apps] || [])
+      FileUtils.mkdir(target_dir)
 
-    ldd = 'otool -L' # OSX for now
-
-    apps.each do |app|
-
-      app = `which #{app}`.chomp unless app.match(/^\//)
-
-      tell("app: #{app}")
-
-      # copy the app to the jail
-
-      FileUtils.cp(app, File.join(target_dir, app))
-
-      # copy required libraries
-
-      lddout = `#{ldd} #{app}`
-
-      next if $? != 0 # program is ldd averse, let's go on
-
-      split_ldd_output(lddout).each do |lib|
-
-        FileUtils.cp(lib, File.join(target_dir, lib))
-        tell("lib: #{lib}")
-
-        split_ldd_output(`#{ldd} #{lib}`).each do |sublib|
-
-          FileUtils.cp(sublib, File.join(target_dir, sublib))
-          tell("sublib: #{sublib}")
-        end
+      %w[
+        etc
+        bin
+        usr/bin
+        usr/lib/system
+      ].each do |dir|
+        FileUtils.mkdir_p(File.join(target_dir, dir))
       end
+
+      File.open(File.join(target_dir, 'etc/passwd'), 'wb') do |f|
+        f.puts 'root:*:0:0:System Administrator:/var/root:/bin/sh'
+      end
+      File.open(File.join(target_dir, 'etc/group'), 'wb') do |f|
+        #f.puts 'root:*:0:0:System Administrator:/var/root:/bin/sh'
+      end
+
+      apps = %w[
+        /usr/lib/dyld
+        ls mkdir mv pwd rm cp cat
+        awk sed grep which tar curl gunzip bunzip2
+        which chmod chown
+        bash
+      ] + (opts[:apps] || [])
+
+      apps.each do |app|
+
+        app = `which #{app}`.chomp unless app.match(/^\//)
+
+        tell("app: #{app}")
+
+        # copy the app to the jail
+
+        cp(app, target_dir)
+
+        # copy required libraries
+
+        copy_libs(app, target_dir)
+      end
+    end
+
+    protected
+
+    def tell(message)
+      puts(message) if @verbose
+    end
+
+    def grep(file, regex)
+      File.readlines(file).select { |l| regex.match(l) }.join("\n")
+    end
+
+    def copy_libs(app_or_lib, target_dir, depth=1)
+
+      @seen_libs ||= []
+
+      ldd = 'otool -L' # OSX for now
+
+      lddout = `#{ldd} #{app_or_lib}`
+
+      return if $? != 0 # program is ldd averse, let's go on
+
+      libs = lddout.split(/[\n\t \r]/).select { |e| e.match(/^\/.+[^:]$/) }
+
+      libs.each do |lib|
+
+        next if @seen_libs.include?(lib)
+
+        cp(lib, target_dir)
+
+        tell(("  " * depth) + "lib: " + lib)
+
+        @seen_libs << lib
+
+        copy_libs(lib, target_dir, depth + 1)
+      end
+    end
+
+    def cp(source, target_dir)
+
+      target = File.join(target_dir, source)
+
+      FileUtils.mkdir_p(File.dirname(target))
+      FileUtils.cp(source, target)
+
+    #rescue Exception => e
+    #  tell("      skipping\n        ..#{source}\n        ..#{e}")
     end
   end
 end
