@@ -39,12 +39,10 @@ end
 
 target_dir = ARGV.last
 verbose = (ARGV & %w[ -v --verbose ]).length > 0
-ruby_home = find_arg('--rh')
-gem_path = find_arg('--gp')
+ruby_src = find_arg('--rs')
 
 Brig.build_chroot(
   target_dir,
   :verbose => verbose,
-  :ruby_home => ruby_home,
-  :gem_path => gem_path)
+  :ruby_src => ruby_src)
 

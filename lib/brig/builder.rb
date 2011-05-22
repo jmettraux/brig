@@ -52,9 +52,8 @@ module Brig
 
       apps = %w[ /usr/lib/dyld ]
       #apps += %w[ ls mkdir mv pwd rm cp chmod chown ]
-      #apps += %w[ cat awk sed grep which ]
-      #apps += %w[ bash ]
-      #apps += %w[ ruby/ruby-1.9.2-p180/ruby ]
+      #apps += %w[ awk sed grep ]
+      apps += %w[ which cat echo env bash ]
       apps += (opts[:apps] || [])
 
       apps.each do |app|
@@ -66,7 +65,7 @@ module Brig
 
       # install ruby
 
-      copy_ruby if @opts[:ruby_home] and @opts[:gem_path]
+      copy_ruby #if @opts[:ruby_src]
 
       # make sure executables are
 
@@ -135,10 +134,18 @@ module Brig
 
     def copy_ruby
 
-      tell("ruby_home: #{@opts[:ruby_home]}")
-      tell("gem_path: #{@opts[:gem_path]}")
+      copy_app_or_lib('/ruby/bin/ruby')
+      copy_app_or_lib('/ruby/bin/gem')
 
-      copy_app_or_lib(File.join(@opts[:ruby_home], 'bin/ruby'), 'usr/bin/ruby')
+      lib_dir = File.join(@target_dir, 'ruby/lib/')
+      FileUtils.mkdir_p(lib_dir)
+      FileUtils.cp_r('/ruby/lib/.', lib_dir)
+
+      libz_bundle = Dir['/ruby/**/zlib.bundle'].first
+      copy_app_or_lib(libz_bundle)
+
+      #libz = Dir['/Developer/**/libz.1.dylib'].first
+      #FileUtils.cp(libz, File.join(@target_dir, 'usr/lib/'))
     end
   end
 end
