@@ -31,9 +31,20 @@ end
 
 require File.join(File.dirname(__FILE__), '../lib/brig/builder')
 
+def find_arg(key)
+  i = ARGV.index(key)
+  i ? ARGV[i + 1] : nil
+end
 
-target_dir = ARGV.find { |a| ! a.match(/^-/) }
+
+target_dir = ARGV.last
 verbose = (ARGV & %w[ -v --verbose ]).length > 0
+ruby_home = find_arg('--rh')
+gem_path = find_arg('--gp')
 
-Brig.build_chroot(target_dir, :verbose => verbose)
+Brig.build_chroot(
+  target_dir,
+  :verbose => verbose,
+  :ruby_home => ruby_home,
+  :gem_path => gem_path)
 

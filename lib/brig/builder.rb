@@ -34,49 +34,51 @@ module Brig
 
     def build_chroot(target_dir, opts)
 
+      @opts = opts
       @verbose = opts[:verbose]
+      @target_dir = File.expand_path(target_dir)
 
-      target_dir = File.expand_path(target_dir)
+      FileUtils.mkdir(@target_dir)
+      FileUtils.mkdir_p(File.join(@target_dir, 'etc'))
 
-      FileUtils.mkdir(target_dir)
-
-      %w[
-        etc
-        bin
-        usr/bin
-        usr/lib/system
-      ].each do |dir|
-        FileUtils.mkdir_p(File.join(target_dir, dir))
+      File.open(File.join(@target_dir, 'etc/passwd'), 'wb') do |f|
+        f.puts 'root:*:0:0:System Administrator:/var/root:/bin/bash'
       end
-
-      File.open(File.join(target_dir, 'etc/passwd'), 'wb') do |f|
-        f.puts 'root:*:0:0:System Administrator:/var/root:/bin/sh'
-      end
-      File.open(File.join(target_dir, 'etc/group'), 'wb') do |f|
+      File.open(File.join(@target_dir, 'etc/group'), 'wb') do |f|
         #f.puts 'root:*:0:0:System Administrator:/var/root:/bin/sh'
       end
 
-      apps = %w[
-        /usr/lib/dyld
-        ls mkdir mv pwd rm cp cat
-        awk sed grep which tar curl gunzip bunzip2
-        which chmod chown
-        bash
-      ] + (opts[:apps] || [])
+      # install apps
+
+      apps = %w[ /usr/lib/dyld ]
+      #apps += %w[ ls mkdir mv pwd rm cp chmod chown ]
+      #apps += %w[ cat awk sed grep which ]
+      #apps += %w[ bash ]
+      #apps += %w[ ruby/ruby-1.9.2-p180/ruby ]
+      apps += (opts[:apps] || [])
 
       apps.each do |app|
 
-        app = `which #{app}`.chomp unless app.match(/^\//)
+        app = `which #{app}`.chomp unless app.index('/')
 
-        tell("app: #{app}")
+        copy_app_or_lib(app)
+      end
 
-        # copy the app to the jail
+      # install ruby
 
-        cp(app, target_dir)
+      copy_ruby if @opts[:ruby_home] and @opts[:gem_path]
 
-        # copy required libraries
+      # make sure executables are
 
-        copy_libs(app, target_dir)
+      FileUtils.chmod(
+        0755, File.join(@target_dir, 'usr/lib/dyld'), :verbose => @verbose)
+
+      %w[
+        bin sbin usr/bin usr/sbin
+      ].each do |dir|
+        Dir[File.join(@target_dir, dir, '*')].each do |path|
+          FileUtils.chmod 0755, path, :verbose => @verbose
+        end
       end
     end
 
@@ -90,15 +92,23 @@ module Brig
       File.readlines(file).select { |l| regex.match(l) }.join("\n")
     end
 
-    def copy_libs(app_or_lib, target_dir, depth=1)
+    def copy_app_or_lib(app_or_lib, target=nil, depth=0)
 
-      @seen_libs ||= []
+      if depth == 0
+        tell("app: #{app_or_lib}")
+      else
+        tell(("  " * depth) + "lib: " + app_or_lib)
+      end
+
+      cp(app_or_lib, target)
 
       ldd = 'otool -L' # OSX for now
 
       lddout = `#{ldd} #{app_or_lib}`
 
-      return if $? != 0 # program is ldd averse, let's go on
+      return if $? != 0 # thing is ldd averse, let's go on
+
+      @seen_libs ||= []
 
       libs = lddout.split(/[\n\t \r]/).select { |e| e.match(/^\/.+[^:]$/) }
 
@@ -106,25 +116,29 @@ module Brig
 
         next if @seen_libs.include?(lib)
 
-        cp(lib, target_dir)
-
-        tell(("  " * depth) + "lib: " + lib)
-
         @seen_libs << lib
 
-        copy_libs(lib, target_dir, depth + 1)
+        copy_app_or_lib(lib, nil, depth + 1)
       end
     end
 
-    def cp(source, target_dir)
+    def cp(source, target=nil)
 
-      target = File.join(target_dir, source)
+      target = File.join(@target_dir, target || source)
 
       FileUtils.mkdir_p(File.dirname(target))
       FileUtils.cp(source, target)
 
     #rescue Exception => e
     #  tell("      skipping\n        ..#{source}\n        ..#{e}")
+    end
+
+    def copy_ruby
+
+      tell("ruby_home: #{@opts[:ruby_home]}")
+      tell("gem_path: #{@opts[:gem_path]}")
+
+      copy_app_or_lib(File.join(@opts[:ruby_home], 'bin/ruby'), 'usr/bin/ruby')
     end
   end
 end

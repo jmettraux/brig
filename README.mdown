@@ -15,6 +15,11 @@ set of ruby tools for chroot on OSX / GNU/Linux
 === building a chroot
 
     sudo ./bin/build.rb [-v] {target_dir}
+    sudo ./bin/build.rb [-v] --rh {ruby_home} --gp {gem_path} {target_dir}
+
+generally, in a RVM world, you want
+
+    sudo ./bin/build.rb -v --rh $MY_RUBY_HOME --gp $GEM_PATH target
 
 == license
 
