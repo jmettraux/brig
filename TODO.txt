@@ -1,3 +1,4 @@
 
 [ ] builder : verbose colors ?
+[ ] some kind of regular user (not root)
 

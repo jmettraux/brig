@@ -38,6 +38,7 @@ module Brig
       @verbose = opts[:verbose]
       @target_dir = File.expand_path(target_dir)
 
+      FileUtils.rm_rf(@target_dir)
       FileUtils.mkdir(@target_dir)
       FileUtils.mkdir_p(File.join(@target_dir, 'etc'))
 
@@ -63,35 +64,22 @@ module Brig
         copy_app_or_lib(app)
       end
 
-      # install ruby
-
-      copy_ruby #if @opts[:ruby_src]
-
-      # make sure executables are
-
-      FileUtils.chmod(
-        0755, File.join(@target_dir, 'usr/lib/dyld'), :verbose => @verbose)
-
-      %w[
-        bin sbin usr/bin usr/sbin
-      ].each do |dir|
-        Dir[File.join(@target_dir, dir, '*')].each do |path|
-          FileUtils.chmod 0755, path, :verbose => @verbose
-        end
-      end
+      copy_ruby if @opts[:ruby_prefix]
     end
 
     protected
 
     def tell(message)
+
       puts(message) if @verbose
     end
 
     def grep(file, regex)
+
       File.readlines(file).select { |l| regex.match(l) }.join("\n")
     end
 
-    def copy_app_or_lib(app_or_lib, target=nil, depth=0)
+    def copy_app_or_lib(app_or_lib, depth=0)
 
       if depth == 0
         tell("app: #{app_or_lib}")
@@ -99,7 +87,9 @@ module Brig
         tell(("  " * depth) + "lib: " + app_or_lib)
       end
 
-      cp(app_or_lib, target)
+      target = cp(app_or_lib)
+
+      FileUtils.chmod(0755, target, :verbose => @verbose) if depth == 0
 
       ldd = 'otool -L' # OSX for now
 
@@ -117,16 +107,18 @@ module Brig
 
         @seen_libs << lib
 
-        copy_app_or_lib(lib, nil, depth + 1)
+        copy_app_or_lib(lib, depth + 1)
       end
     end
 
-    def cp(source, target=nil)
+    def cp(source)
 
-      target = File.join(@target_dir, target || source)
+      target = File.join(@target_dir, source)
 
       FileUtils.mkdir_p(File.dirname(target))
       FileUtils.cp(source, target)
+
+      target
 
     #rescue Exception => e
     #  tell("      skipping\n        ..#{source}\n        ..#{e}")
@@ -134,18 +126,17 @@ module Brig
 
     def copy_ruby
 
-      copy_app_or_lib('/ruby/bin/ruby')
-      copy_app_or_lib('/ruby/bin/gem')
+      ruby_prefix = @opts[:ruby_prefix]
 
-      lib_dir = File.join(@target_dir, 'ruby/lib/')
+      copy_app_or_lib(File.join(ruby_prefix, 'bin/ruby'))
+
+      lib_dir = File.join(@target_dir, ruby_prefix, 'lib/')
       FileUtils.mkdir_p(lib_dir)
-      FileUtils.cp_r('/ruby/lib/.', lib_dir)
+      FileUtils.cp_r(File.join(ruby_prefix, 'lib/.'), lib_dir)
 
-      libz_bundle = Dir['/ruby/**/zlib.bundle'].first
-      copy_app_or_lib(libz_bundle)
-
-      #libz = Dir['/Developer/**/libz.1.dylib'].first
-      #FileUtils.cp(libz, File.join(@target_dir, 'usr/lib/'))
+      #copy_app_or_lib('/ruby/bin/gem')
+      #libz_bundle = Dir['/ruby/**/zlib.bundle'].first
+      #copy_app_or_lib(libz_bundle)
     end
   end
 end

@@ -7,18 +7,24 @@ set of ruby tools for chroot on OSX / GNU/Linux
 
 ## usage
 
-### running in a chroot
+## running in a chroot
 
     brig = Brig.new('chroot_dir')
     result = brig.eval(ruby_code)
 
-### building a chroot
+## building a chroot
+
+### preparing a ruby for the chroot
+
+Grab a Ruby and .configure --prefix=/ruby; make; sudo make install
+
+### building
 
     sudo ./bin/build.rb [-v] {target_dir}
 
-generally, in a RVM world, you want
+if you've build the target Ruby in /ruby :
 
-    sudo ./bin/build.rb -v --rh $MY_RUBY_HOME --gp $GEM_PATH target
+    sudo ./bin/build.rb -v --rp /ruby target
 
 ## license
 
