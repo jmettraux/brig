@@ -50,8 +50,14 @@ module Brig
       #File.open(File.join(@target_dir, 'etc/group'), 'wb') do |f|
       #  f.puts 'brig:x:1000:'
       #end
-      File.open(File.join(@target_dir, 'etc/hosts'), 'wb') do |f|
-        f.puts '127.0.0.1 localhost'
+      cp('/etc/hosts', @verbose)
+      cp('/etc/host.conf', @verbose)
+      cp('/etc/resolv.conf', @verbose)
+      cp('/etc/nsswitch.conf', @verbose)
+
+      Dir['/lib/libns*.so'].each do |libns|
+        tell("libns: #{libns}")
+        cp(libns)
       end
 
       # install apps
@@ -68,7 +74,7 @@ module Brig
       #apps += %w[ ls mkdir mv pwd rm cp chmod chown ]
       #apps += %w[ awk sed grep ]
       apps += %w[ id ls which cat echo env bash ]
-      apps += %w[ uuidgen dig nslookup ]
+      apps += %w[ uuidgen ping host dig nslookup ]
       #apps += (opts[:apps] || [])
 
       apps.each do |app|
@@ -130,12 +136,14 @@ module Brig
       end
     end
 
-    def cp(source)
+    def cp(source, verbose=false)
 
       target = File.join(@target_dir, source)
 
       FileUtils.mkdir_p(File.dirname(target))
       FileUtils.cp(source, target)
+
+      tell("cp: #{source}") if verbose
 
       target
     end
