@@ -50,14 +50,26 @@ module Brig
       #File.open(File.join(@target_dir, 'etc/group'), 'wb') do |f|
       #  f.puts 'brig:x:1000:'
       #end
+      File.open(File.join(@target_dir, 'etc/hosts'), 'wb') do |f|
+        f.puts '127.0.0.1 localhost'
+      end
 
       # install apps
 
-      apps = %w[ /usr/lib/dyld ]
+      apps = []
+
+      case uname
+        when 'Linux'
+          apps += %w[ ld ]
+          apps += %w[ uuidgen ] # evmachine
+        when 'Darwin'
+          apps += %w[ /usr/lib/dyld ]
+      end
+
       #apps += %w[ ls mkdir mv pwd rm cp chmod chown ]
       #apps += %w[ awk sed grep ]
       apps += %w[ id ls which cat echo env bash ]
-      apps += (opts[:apps] || [])
+      #apps += (opts[:apps] || [])
 
       apps.each do |app|
         app = `which #{app}`.chomp unless app.index('/')
@@ -68,6 +80,11 @@ module Brig
     end
 
     protected
+
+    def uname
+
+      @uname ||= `uname`
+    end
 
     def tell(message)
 
@@ -81,6 +98,8 @@ module Brig
 
     def copy_app_or_lib(app_or_lib, depth=0)
 
+      return unless app_or_lib
+
       if depth == 0
         tell("app: #{app_or_lib}")
       else
@@ -91,7 +110,7 @@ module Brig
 
       FileUtils.chmod(0755, target, :verbose => @verbose) if depth == 0
 
-      ldd = 'otool -L' # OSX for now
+      ldd = (uname == 'Darwin') ? 'otool -L' : 'ldd'
 
       lddout = `#{ldd} #{app_or_lib}`
 
@@ -119,9 +138,6 @@ module Brig
       FileUtils.cp(source, target)
 
       target
-
-    #rescue Exception => e
-    #  tell("      skipping\n        ..#{source}\n        ..#{e}")
     end
 
     def copy_ruby
@@ -135,15 +151,16 @@ module Brig
       FileUtils.cp_r(File.join(ruby_prefix, 'lib/.'), lib_dir)
 
       #copy_app_or_lib('/ruby/bin/gem')
+        # don't let chroot install gems [too easily]
 
       %w[
-        md5.bundle openssl.bundle
-      ].each do |lib|
+        md5 openssl
+      ].collect { |lib|
+        lib + ((uname == 'Darwin') ? '.bundle' : '.so')
+      }.each do |lib|
         lib = Dir[File.join(ruby_prefix, '**', lib)].first
         copy_app_or_lib(lib, 1)
       end
-
-      #libz_bundle = Dir['/ruby/**/zlib.bundle'].first
     end
   end
 end
