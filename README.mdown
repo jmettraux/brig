@@ -16,13 +16,13 @@ set of ruby tools for chroot on OSX / GNU/Linux
 
 ### preparing a ruby for the chroot
 
-Grab a Ruby and .configure --prefix=/ruby; make; sudo make install
+Grab a Ruby and untar it, cd into it and
+
+    .configure --prefix=/ruby; make; sudo make install
 
 ### building
 
-    sudo ./bin/build.rb [-v] {target_dir}
-
-if you've build the target Ruby in /ruby :
+pass the Ruby prefix with --rp
 
     sudo ./bin/build.rb -v --rp /ruby target
 

@@ -61,7 +61,6 @@ module Brig
       case uname
         when 'Linux'
           apps += %w[ ld ]
-          apps += %w[ uuidgen ] # evmachine
         when 'Darwin'
           apps += %w[ /usr/lib/dyld ]
       end
@@ -69,6 +68,7 @@ module Brig
       #apps += %w[ ls mkdir mv pwd rm cp chmod chown ]
       #apps += %w[ awk sed grep ]
       apps += %w[ id ls which cat echo env bash ]
+      apps += %w[ uuidgen dig nslookup ]
       #apps += (opts[:apps] || [])
 
       apps.each do |app|
@@ -83,7 +83,7 @@ module Brig
 
     def uname
 
-      @uname ||= `uname`
+      @uname ||= `uname`.chomp
     end
 
     def tell(message)
