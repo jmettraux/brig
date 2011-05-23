@@ -40,27 +40,27 @@ module Brig
 
       FileUtils.rm_rf(@target_dir)
       FileUtils.mkdir(@target_dir)
-      FileUtils.mkdir_p(File.join(@target_dir, 'etc'))
+      FileUtils.mkdir_p(File.join(@target_dir, 'etc/'))
+      FileUtils.mkdir_p(File.join(@target_dir, 'home/brig/'))
 
-      File.open(File.join(@target_dir, 'etc/passwd'), 'wb') do |f|
-        f.puts 'root:*:0:0:System Administrator:/var/root:/bin/bash'
-      end
-      File.open(File.join(@target_dir, 'etc/group'), 'wb') do |f|
-        #f.puts 'root:*:0:0:System Administrator:/var/root:/bin/sh'
-      end
+      #File.open(File.join(@target_dir, 'etc/passwd'), 'wb') do |f|
+      #  f.puts 'root:*:0:0:System Administrator:/var/root:/bin/bash'
+      #  f.puts 'brig:*:1000:1000:Brig User:/home/brig:/bin/bash'
+      #end
+      #File.open(File.join(@target_dir, 'etc/group'), 'wb') do |f|
+      #  f.puts 'brig:x:1000:'
+      #end
 
       # install apps
 
       apps = %w[ /usr/lib/dyld ]
       #apps += %w[ ls mkdir mv pwd rm cp chmod chown ]
       #apps += %w[ awk sed grep ]
-      apps += %w[ which cat echo env bash ]
+      apps += %w[ id ls which cat echo env bash ]
       apps += (opts[:apps] || [])
 
       apps.each do |app|
-
         app = `which #{app}`.chomp unless app.index('/')
-
         copy_app_or_lib(app)
       end
 
@@ -135,8 +135,15 @@ module Brig
       FileUtils.cp_r(File.join(ruby_prefix, 'lib/.'), lib_dir)
 
       #copy_app_or_lib('/ruby/bin/gem')
+
+      %w[
+        md5.bundle openssl.bundle
+      ].each do |lib|
+        lib = Dir[File.join(ruby_prefix, '**', lib)].first
+        copy_app_or_lib(lib, 1)
+      end
+
       #libz_bundle = Dir['/ruby/**/zlib.bundle'].first
-      #copy_app_or_lib(libz_bundle)
     end
   end
 end
