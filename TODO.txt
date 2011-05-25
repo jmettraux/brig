@@ -1,6 +1,9 @@
 
  .  http://www.floc.net/makejail/
+ .  http://olivier.sessink.nl/jailkit/howtos_debug_jails.html
 
 [ ] builder : verbose colors ?
+[ ] builder : adapt to osx
+[ ] move libs and apps to config file
 [ ] some kind of regular user (not root)
 

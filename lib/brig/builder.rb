@@ -43,6 +43,8 @@ module Brig
       FileUtils.mkdir_p(File.join(@target_dir, 'etc/'))
       FileUtils.mkdir_p(File.join(@target_dir, 'home/brig/'))
 
+      # copy configuration files
+
       #File.open(File.join(@target_dir, 'etc/passwd'), 'wb') do |f|
       #  f.puts 'root:*:0:0:System Administrator:/var/root:/bin/bash'
       #  f.puts 'brig:*:1000:1000:Brig User:/home/brig:/bin/bash'
@@ -50,14 +52,30 @@ module Brig
       #File.open(File.join(@target_dir, 'etc/group'), 'wb') do |f|
       #  f.puts 'brig:x:1000:'
       #end
+
       cp('/etc/hosts', @verbose)
       cp('/etc/host.conf', @verbose)
       cp('/etc/resolv.conf', @verbose)
       cp('/etc/nsswitch.conf', @verbose)
 
-      Dir['/lib/libns*.so'].each do |libns|
-        tell("libns: #{libns}")
-        cp(libns)
+      # copy libs
+
+      # libs for name resolution
+
+      Dir['/lib/**/libns*'].each do |lib|
+        copy_app_or_lib(lib)
+      end
+      Dir['/usr/lib/**/libns*'].each do |lib|
+        copy_app_or_lib(lib)
+      end
+      Dir['/lib/**/libresolv*'].each do |lib|
+        copy_app_or_lib(lib)
+      end
+
+      # libs for event machine
+
+      Dir['/usr/lib/**/libstd*'].each do |lib|
+        copy_app_or_lib(lib)
       end
 
       # install apps
@@ -75,7 +93,7 @@ module Brig
       #apps += %w[ awk sed grep ]
       apps += %w[ id ls which cat echo env bash ]
       apps += %w[ uuidgen ping host dig nslookup ]
-      #apps += (opts[:apps] || [])
+      apps += %w[ curl strace ]
 
       apps.each do |app|
         app = `which #{app}`.chomp unless app.index('/')
@@ -106,15 +124,14 @@ module Brig
 
       return unless app_or_lib
 
-      if depth == 0
+      target = cp(app_or_lib)
+
+      if depth == 0 and ( ! File.basename(app_or_lib).match(/^lib/))
+        FileUtils.chmod(0755, target, :verbose => @verbose)
         tell("app: #{app_or_lib}")
       else
         tell(("  " * depth) + "lib: " + app_or_lib)
       end
-
-      target = cp(app_or_lib)
-
-      FileUtils.chmod(0755, target, :verbose => @verbose) if depth == 0
 
       ldd = (uname == 'Darwin') ? 'otool -L' : 'ldd'
 

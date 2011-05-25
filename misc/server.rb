@@ -1,8 +1,8 @@
 
 require 'rubygems'
 
-require 'webrick'
-#require 'thin'
+#require 'webrick'
+require 'thin'
 require 'sinatra'
 
 get '/' do
