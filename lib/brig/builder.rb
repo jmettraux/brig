@@ -34,6 +34,8 @@ module Brig
 
     def build_chroot(target_dir, opts)
 
+      start = Time.now
+
       @opts = opts
       @verbose = opts[:verbose]
       @target_dir = File.expand_path(target_dir)
@@ -97,6 +99,17 @@ module Brig
       # ruby ?
 
       copy_ruby if @opts[:ruby_prefix]
+
+      # over
+
+      return unless @verbose
+
+      puts
+      puts "success"
+      puts "  #{`du -sh #{@target_dir}`}"
+      puts "  took #{Time.now - start}s"
+      puts "  copied #{@seen_libs.size} libs"
+      puts
     end
 
     protected
@@ -128,7 +141,6 @@ module Brig
       target = cp(app_or_lib)
 
       if depth == 0 and ( ! is_lib?(app_or_lib))
-        FileUtils.chmod(0755, target, :verbose => @verbose)
         tell("app: #{app_or_lib}")
       else
         tell(("  " * depth) + "lib: " + app_or_lib)
@@ -161,7 +173,7 @@ module Brig
       target = File.join(@target_dir, source)
 
       FileUtils.mkdir_p(File.dirname(target))
-      FileUtils.cp(source, target)
+      FileUtils.cp(source, target, :preserve => true)
 
       target
 
@@ -178,7 +190,7 @@ module Brig
 
       lib_dir = File.join(@target_dir, ruby_prefix, 'lib/')
       FileUtils.mkdir_p(lib_dir)
-      FileUtils.cp_r(File.join(ruby_prefix, 'lib/.'), lib_dir)
+      FileUtils.cp_r(File.join(ruby_prefix, 'lib/.'), lib_dir, :preserve => true)
 
       #copy_app_or_lib('/ruby/bin/gem')
         # don't let chroot install gems [too easily]
