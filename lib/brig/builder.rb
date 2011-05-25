@@ -54,9 +54,9 @@ module Brig
       #end
 
       cp('/etc/hosts', @verbose)
-      cp('/etc/host.conf', @verbose)
       cp('/etc/resolv.conf', @verbose)
-      cp('/etc/nsswitch.conf', @verbose)
+      cp('/etc/host.conf', @verbose) rescue nil
+      cp('/etc/nsswitch.conf', @verbose) rescue nil
 
       # copy libs
 
@@ -69,12 +69,6 @@ module Brig
         copy_app_or_lib(lib)
       end
       Dir['/lib/**/libresolv*'].each do |lib|
-        copy_app_or_lib(lib)
-      end
-
-      # libs for event machine
-
-      Dir['/usr/lib/**/libstd*'].each do |lib|
         copy_app_or_lib(lib)
       end
 
@@ -100,6 +94,8 @@ module Brig
         copy_app_or_lib(app)
       end
 
+      # ruby ?
+
       copy_ruby if @opts[:ruby_prefix]
     end
 
@@ -120,13 +116,18 @@ module Brig
       File.readlines(file).select { |l| regex.match(l) }.join("\n")
     end
 
+    def is_lib?(path)
+
+      path.match(/^lib|\.bundle$|\.dylib$|\.so$/)
+    end
+
     def copy_app_or_lib(app_or_lib, depth=0)
 
-      return unless app_or_lib
+      return if app_or_lib == nil or app_or_lib == ''
 
       target = cp(app_or_lib)
 
-      if depth == 0 and ( ! File.basename(app_or_lib).match(/^lib/))
+      if depth == 0 and ( ! is_lib?(app_or_lib))
         FileUtils.chmod(0755, target, :verbose => @verbose)
         tell("app: #{app_or_lib}")
       else
@@ -155,14 +156,18 @@ module Brig
 
     def cp(source, verbose=false)
 
+      tell("cp: #{source}") if verbose
+
       target = File.join(@target_dir, source)
 
       FileUtils.mkdir_p(File.dirname(target))
       FileUtils.cp(source, target)
 
-      tell("cp: #{source}") if verbose
-
       target
+
+    rescue Exception => e
+      puts "** failed to copy #{source}"
+      raise e
     end
 
     def copy_ruby
@@ -178,12 +183,14 @@ module Brig
       #copy_app_or_lib('/ruby/bin/gem')
         # don't let chroot install gems [too easily]
 
-      %w[
-        md5 openssl
-      ].collect { |lib|
-        lib + ((uname == 'Darwin') ? '.bundle' : '.so')
-      }.each do |lib|
-        lib = Dir[File.join(ruby_prefix, '**', lib)].first
+      libs = if uname == 'Darwin'
+        Dir[File.join(ruby_prefix, 'lib', '**', '*.dylib')] +
+        Dir[File.join(ruby_prefix, 'lib', '**', '*.bundle')]
+      else
+        Dir[File.join(ruby_prefix, 'lib', '**', '*.so')]
+      end
+
+      libs.each do |lib|
         copy_app_or_lib(lib, 1)
       end
     end
