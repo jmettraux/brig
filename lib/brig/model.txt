@@ -12,6 +12,15 @@
 /usr/lib/**/libns*
 /lib/**/libresolv*
 
+/etc/shells
+/etc/login.defs ?
+/etc/pam.conf ?
+/etc/pam.d/
+/lib/security/ ?
+/usr/lib/libpam*
+/usr/lib/pam/ ?
+su
+
 /bin/sh
 bash
 

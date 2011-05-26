@@ -71,14 +71,10 @@ module Brig
       FileUtils.mkdir_p(@target_dir.join('home/brig/'))
 
       #File.open(@target_dir.join('etc/passwd'), 'wb') do |f|
-      #  f.puts 'nobody:*:-2:-2:just a nobody:/home/brig:/bin/bash'
-      #  #f.puts 'brig:*:9000:9000:Brig User:/home/brig:/bin/bash'
+      #  f.puts 'brig:*:9000:9000:Brig User:/home/brig:/bin/bash'
       #end
       cp('/etc/passwd')
-      cp('/etc/shadow')
-      cp('/etc/shells')
-      cp('/etc/login.defs')
-      cp('/etc/pam.conf')
+      cp('/etc/shadow') rescue nil
 
       model = Builder.read_model(opts[:model])
       model += (opts[:items] || [])
@@ -90,10 +86,6 @@ module Brig
       else
         model.unshift([ 'ld' ])
       end
-
-      model.unshift([ 'su' ])
-      model.unshift([ '/etc/pam.d/' ])
-      model.unshift([ '/lib/security/' ])
 
       model.each do |item|
 
@@ -153,12 +145,11 @@ module Brig
       # then make sure that each lib in there has its dependencies
       # satisfied
 
-      libs = if uname == 'Darwin'
+      libs =
         Dir[File.join(path, '**', '*.dylib')] +
-        Dir[File.join(path, '**', '*.bundle')]
-      else
-        Dir[File.join(path, '**', '*.so')]
-      end
+        Dir[File.join(path, '**', '*.bundle')] +
+        Dir[File.join(path, '**', '*.so')] +
+        Dir[File.join(path, '**', '*.so.2')]
 
       libs.each { |lib| copy(lib, 1) }
     end
