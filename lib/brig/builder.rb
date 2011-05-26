@@ -57,20 +57,36 @@ module Brig
       @verbose = opts[:verbose]
       @target_dir = File.expand_path(target_dir)
 
+      class << @target_dir
+        def join(*args)
+          args.unshift(self)
+          File.join(*args)
+        end
+      end
+
       FileUtils.rm_rf(@target_dir)
       FileUtils.mkdir(@target_dir)
 
-      FileUtils.mkdir_p(File.join(@target_dir, 'home/brig/'))
+      FileUtils.mkdir_p(@target_dir.join('etc/'))
+      FileUtils.mkdir_p(@target_dir.join('home/brig/'))
+
+      File.open(@target_dir.join('etc/passwd'), 'wb') do |f|
+        f.puts 'nobody:*:-2:-2:just a nobody:/home/brig:/bin/bash'
+        #f.puts 'brig:*:9000:9000:Brig User:/home/brig:/bin/bash'
+      end
 
       model = Builder.read_model(opts[:model])
       model += (opts[:items] || [])
+
+      # adding indispensible apps
 
       if uname == 'Darwin'
         model.unshift([ '/usr/lib/dyld' ])
       else
         model.unshift([ 'ld' ])
       end
-        # absolutely necessary
+
+      model.unshift([ 'su' ])
 
       model.each do |item|
 
@@ -122,7 +138,7 @@ module Brig
 
       # at first, copy the stuff cp -pR path
 
-      FileUtils.cp_r(path, File.join(@target_dir, path), :preserve => true)
+      FileUtils.cp_r(path, @target_dir.join(path), :preserve => true)
 
       tell("dir: #{path}")
 
@@ -181,7 +197,7 @@ module Brig
 
     def cp(source)
 
-      target = File.join(@target_dir, source)
+      target = @target_dir.join(source)
 
       FileUtils.mkdir_p(File.dirname(target))
       FileUtils.cp(source, target, :preserve => true)

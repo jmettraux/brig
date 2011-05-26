@@ -12,19 +12,24 @@
 /usr/lib/**/libns*
 /lib/**/libresolv*
 
+/bin/sh
+bash
+
 id
 ls
 which
 cat
 echo
 env
-bash
 uuidgen
 ping
 host
 dig
 nslookup
 curl
+expr
+
 strace ?
 dtruss ?
+dtrace ?
 
