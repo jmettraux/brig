@@ -70,10 +70,15 @@ module Brig
       FileUtils.mkdir_p(@target_dir.join('etc/'))
       FileUtils.mkdir_p(@target_dir.join('home/brig/'))
 
-      File.open(@target_dir.join('etc/passwd'), 'wb') do |f|
-        f.puts 'nobody:*:-2:-2:just a nobody:/home/brig:/bin/bash'
-        #f.puts 'brig:*:9000:9000:Brig User:/home/brig:/bin/bash'
-      end
+      #File.open(@target_dir.join('etc/passwd'), 'wb') do |f|
+      #  f.puts 'nobody:*:-2:-2:just a nobody:/home/brig:/bin/bash'
+      #  #f.puts 'brig:*:9000:9000:Brig User:/home/brig:/bin/bash'
+      #end
+      cp('/etc/passwd')
+      cp('/etc/shadow')
+      cp('/etc/shells')
+      cp('/etc/login.defs')
+      cp('/etc/pam.conf')
 
       model = Builder.read_model(opts[:model])
       model += (opts[:items] || [])
@@ -87,6 +92,8 @@ module Brig
       end
 
       model.unshift([ 'su' ])
+      model.unshift([ '/etc/pam.d/' ])
+      model.unshift([ '/lib/security/' ])
 
       model.each do |item|
 
@@ -138,6 +145,7 @@ module Brig
 
       # at first, copy the stuff cp -pR path
 
+      FileUtils.mkdir_p(File.dirname(@target_dir.join(path)))
       FileUtils.cp_r(path, @target_dir.join(path), :preserve => true)
 
       tell("dir: #{path}")
