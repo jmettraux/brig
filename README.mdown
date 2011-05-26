@@ -22,9 +22,9 @@ Grab a Ruby and untar it, cd into it and
 
 ### building
 
-pass the Ruby prefix with --rp
+pass the Ruby prefix with -i
 
-    sudo ./bin/build.rb -v --rp /ruby target
+    sudo ./bin/build.rb -v -i /ruby target
 
 ## license
 

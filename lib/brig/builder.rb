@@ -25,14 +25,31 @@ require 'fileutils'
 
 module Brig
 
-  def self.build_chroot(target_dir, opts={})
-
-    Brig::Builder.new.build_chroot(target_dir, opts)
-  end
-
   class Builder
 
-    def build_chroot(target_dir, opts)
+    def self.build_chroot(target_dir, opts={})
+
+      Brig::Builder.new.build(target_dir, opts)
+    end
+
+    def self.default_model
+
+      File.read(File.join(File.dirname(__FILE__), 'model.txt'))
+    end
+
+    def self.read_model(model_path)
+
+      model = model_path ? File.read(model_path) : default_model
+
+      model.split("\n").inject([]) { |a, line|
+        if line.strip.match(/^[^#]/)
+          a << line.split(/\s+/).select { |w| ! w.match(/^#/) }
+        end
+        a
+      }
+    end
+
+    def build(target_dir, opts)
 
       start = Time.now
 
@@ -42,74 +59,46 @@ module Brig
 
       FileUtils.rm_rf(@target_dir)
       FileUtils.mkdir(@target_dir)
-      FileUtils.mkdir_p(File.join(@target_dir, 'etc/'))
+
       FileUtils.mkdir_p(File.join(@target_dir, 'home/brig/'))
 
-      # copy configuration files
+      model = Builder.read_model(opts[:model])
+      model += (opts[:items] || [])
 
-      #File.open(File.join(@target_dir, 'etc/passwd'), 'wb') do |f|
-      #  f.puts 'root:*:0:0:System Administrator:/var/root:/bin/bash'
-      #  f.puts 'brig:*:1000:1000:Brig User:/home/brig:/bin/bash'
-      #end
-      #File.open(File.join(@target_dir, 'etc/group'), 'wb') do |f|
-      #  f.puts 'brig:x:1000:'
-      #end
-
-      cp('/etc/hosts', @verbose)
-      cp('/etc/resolv.conf', @verbose)
-      cp('/etc/host.conf', @verbose) rescue nil
-      cp('/etc/nsswitch.conf', @verbose) rescue nil
-
-      # copy libs
-
-      # libs for name resolution
-
-      Dir['/lib/**/libns*'].each do |lib|
-        copy_app_or_lib(lib)
+      if uname == 'Darwin'
+        model.unshift([ '/usr/lib/dyld' ])
+      else
+        model.unshift([ 'ld' ])
       end
-      Dir['/usr/lib/**/libns*'].each do |lib|
-        copy_app_or_lib(lib)
-      end
-      Dir['/lib/**/libresolv*'].each do |lib|
-        copy_app_or_lib(lib)
-      end
+        # absolutely necessary
 
-      # install apps
+      model.each do |item|
 
-      apps = []
+        pa = item.first
+        optional = item.include?('?')
 
-      case uname
-        when 'Linux'
-          apps += %w[ ld ]
-        when 'Darwin'
-          apps += %w[ /usr/lib/dyld ]
+        path = pa.match(/^\//) ? pa : `which #{pa}`.chomp
+        puts ". #{pa} -> #{path}" if @verbose
+
+        next if optional and ( ! File.exist?(path))
+
+        if pa.index('*')
+          copy_pattern(pa)
+        elsif File.directory?(path)
+          copy_dir(path)
+        else
+          copy(path)
+        end
       end
 
-      #apps += %w[ ls mkdir mv pwd rm cp chmod chown ]
-      #apps += %w[ awk sed grep ]
-      apps += %w[ id ls which cat echo env bash ]
-      apps += %w[ uuidgen ping host dig nslookup ]
-      apps += %w[ curl strace ]
-
-      apps.each do |app|
-        app = `which #{app}`.chomp unless app.index('/')
-        copy_app_or_lib(app)
+      if @verbose
+        puts
+        puts "success"
+        puts "  #{`du -sh #{@target_dir}`}"
+        puts "  took #{Time.now - start}s"
+        puts "  copied #{@seen_libs.size} libs"
+        puts
       end
-
-      # ruby ?
-
-      copy_ruby if @opts[:ruby_prefix]
-
-      # over
-
-      return unless @verbose
-
-      puts
-      puts "success"
-      puts "  #{`du -sh #{@target_dir}`}"
-      puts "  took #{Time.now - start}s"
-      puts "  copied #{@seen_libs.size} libs"
-      puts
     end
 
     protected
@@ -124,26 +113,50 @@ module Brig
       puts(message) if @verbose
     end
 
-    def grep(file, regex)
+    def copy_pattern(path)
 
-      File.readlines(file).select { |l| regex.match(l) }.join("\n")
+      Dir[path].each { |pa| copy(pa) }
     end
 
-    def is_lib?(path)
+    def copy_dir(path)
 
-      path.match(/^lib|\.bundle$|\.dylib$|\.so$/)
+      # at first, copy the stuff cp -pR path
+
+      FileUtils.cp_r(path, File.join(@target_dir, path), :preserve => true)
+
+      tell("dir: #{path}")
+
+      # then make sure that each lib in there has its dependencies
+      # satisfied
+
+      libs = if uname == 'Darwin'
+        Dir[File.join(path, '**', '*.dylib')] +
+        Dir[File.join(path, '**', '*.bundle')]
+      else
+        Dir[File.join(path, '**', '*.so')]
+      end
+
+      libs.each { |lib| copy(lib, 1) }
     end
 
-    def copy_app_or_lib(app_or_lib, depth=0)
+    #def is_lib?(path)
+    #  path.match(/^lib|\.bundle$|\.dylib$|\.so$/)
+    #end
 
-      return if app_or_lib == nil or app_or_lib == ''
+    def copy(app_or_lib, depth=0)
+
+      return unless app_or_lib
 
       target = cp(app_or_lib)
 
-      if depth == 0 and ( ! is_lib?(app_or_lib))
-        tell("app: #{app_or_lib}")
+      if depth == 0
+        if File.executable?(app_or_lib)
+          tell("  app: #{app_or_lib}")
+        else
+          tell("  file: #{app_or_lib}")
+        end
       else
-        tell(("  " * depth) + "lib: " + app_or_lib)
+        tell(("  " * (depth + 1)) + "lib: " + app_or_lib)
       end
 
       ldd = (uname == 'Darwin') ? 'otool -L' : 'ldd'
@@ -162,13 +175,11 @@ module Brig
 
         @seen_libs << lib
 
-        copy_app_or_lib(lib, depth + 1)
+        copy(lib, depth + 1)
       end
     end
 
-    def cp(source, verbose=false)
-
-      tell("cp: #{source}") if verbose
+    def cp(source)
 
       target = File.join(@target_dir, source)
 
@@ -180,31 +191,6 @@ module Brig
     rescue Exception => e
       puts "** failed to copy #{source}"
       raise e
-    end
-
-    def copy_ruby
-
-      ruby_prefix = @opts[:ruby_prefix]
-
-      copy_app_or_lib(File.join(ruby_prefix, 'bin/ruby'))
-
-      lib_dir = File.join(@target_dir, ruby_prefix, 'lib/')
-      FileUtils.mkdir_p(lib_dir)
-      FileUtils.cp_r(File.join(ruby_prefix, 'lib/.'), lib_dir, :preserve => true)
-
-      #copy_app_or_lib('/ruby/bin/gem')
-        # don't let chroot install gems [too easily]
-
-      libs = if uname == 'Darwin'
-        Dir[File.join(ruby_prefix, 'lib', '**', '*.dylib')] +
-        Dir[File.join(ruby_prefix, 'lib', '**', '*.bundle')]
-      else
-        Dir[File.join(ruby_prefix, 'lib', '**', '*.so')]
-      end
-
-      libs.each do |lib|
-        copy_app_or_lib(lib, 1)
-      end
     end
   end
 end

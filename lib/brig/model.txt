@@ -1,0 +1,30 @@
+
+# default chroot model
+
+/etc/hosts
+/etc/resolv.conf
+
+/etc/host.conf ?
+/etc/nsswitch.conf ?
+  # the ? tells brig not to care if the original file is not present
+
+/lib/**/libns*
+/usr/lib/**/libns*
+/lib/**/libresolv*
+
+id
+ls
+which
+cat
+echo
+env
+bash
+uuidgen
+ping
+host
+dig
+nslookup
+curl
+strace ?
+dtruss ?
+

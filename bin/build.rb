@@ -20,29 +20,67 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-if ARGV.length < 1
+
+
+def puts_usage
   puts %{
+  sudo #{$0} --show
+
+    shows the default model used to build the chroot environment
+
   sudo #{$0} [-v] {target_dir}
 
-  builds a chroot directory.
+    builds a chroot directory with the default model
+
+  sudo #{$0} [-v] -i /ruby/bin/ruby -i /ruby/lib/ {target_dir}
+
+    builds a chroot directory with the default model but adds one or
+    more -i items (here Ruby and its libraries)
   }
-  exit 0
+end
+
+if ARGV.length < 1
+  puts_usage
+  exit(0)
 end
 
 require File.join(File.dirname(__FILE__), '../lib/brig/builder')
 
-def find_arg(key)
-  i = ARGV.index(key)
-  i ? ARGV[i + 1] : nil
+#def find_arg(key)
+#  i = ARGV.index(key)
+#  i ? ARGV[i + 1] : nil
+#end
+
+if ARGV.include?('--show')
+  puts Brig::Builder.default_model
+  exit(0)
 end
 
+verbose = false
+items = []
+model = nil
+target_dir = nil
 
-target_dir = ARGV.last
-verbose = (ARGV & %w[ -v --verbose ]).length > 0
-ruby_prefix = find_arg('--rp')
+while arg = ARGV.shift
+  case arg
+    when '-v', '--verbose' then verbose = true
+    when '-m', '--model' then model = ARGV.shift
+    when '-i' then items << ARGV.shift
+    else target_dir = arg
+  end
+end
 
-Brig.build_chroot(
+if target_dir == nil
+  puts %{
+** missing a target dir
+  }
+  puts_usage
+  exit(1)
+end
+
+Brig::Builder.build_chroot(
   target_dir,
   :verbose => verbose,
-  :ruby_prefix => ruby_prefix)
+  :model => model,
+  :items => items)
 
