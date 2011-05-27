@@ -106,6 +106,11 @@ module Brig
         end
       end
 
+      if uname == 'Darwin'
+        FileUtils.mkdir(@target_dir.join('dev'))
+        `mknod #{@target_dir.join('dev/dtrace')} c 24 2`
+      end
+
       if @verbose
         puts
         puts "success"

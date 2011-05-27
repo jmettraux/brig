@@ -2,7 +2,7 @@
 # default chroot model
 
 /etc/hosts
-/etc/resolv.conf
+/etc/resolv.conf ?
 
 /etc/host.conf ?
 /etc/nsswitch.conf ?
@@ -39,6 +39,8 @@ curl
 expr
 
 strace ?
-dtruss ?
-dtrace ?
+#dtruss ?
+#dtrace ?
+#/usr/lib/dtrace/ ?
+#/mach_kernel ?
 
