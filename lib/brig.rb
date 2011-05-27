@@ -20,3 +20,6 @@
 # THE SOFTWARE.
 #++
 
+require 'brig/version'
+require 'brig/builder'
+
