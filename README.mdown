@@ -7,6 +7,8 @@ set of ruby tools for chroot on OSX / GNU/Linux
 
 ## usage
 
+...
+
 ## running in a chroot
 
     brig = Brig.new('chroot_dir')
@@ -25,6 +27,17 @@ Grab a Ruby and untar it, cd into it and
 pass the Ruby prefix with -i
 
     sudo ./bin/build.rb -v -i /ruby target
+
+
+## issues
+
+https://github.com/jmettraux/brig/issues
+
+
+## contact
+
+IRC freenode.net #ruote
+
 
 ## license
 
