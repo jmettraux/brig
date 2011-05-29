@@ -29,6 +29,13 @@ pass the Ruby prefix with -i
     sudo ./bin/build.rb -v -i /ruby target
 
 
+## testing
+
+    sudo rspec spec/
+      # or simply
+    rake
+
+
 ## issues
 
 https://github.com/jmettraux/brig/issues

@@ -20,7 +20,9 @@
 # THE SOFTWARE.
 #++
 
-require 'brig/version'
-require 'brig/builder'
-require 'brig/runner'
+module Brig
+
+  class Runner
+  end
+end
 

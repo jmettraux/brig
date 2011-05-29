@@ -12,6 +12,9 @@ describe Brig::Builder do
         File.read(File.join(File.dirname(__FILE__), '../lib/brig/model.txt'))
     end
   end
+end
+
+describe Brig do
 
   describe '.build' do
 
@@ -22,7 +25,7 @@ describe Brig::Builder do
 
     it 'builds a chroot place' do
 
-      Brig::Builder.build('spec_target')
+      Brig.build('spec_target')
 
       File.exist?('spec_target').should == true
       File.directory?('spec_target').should == true

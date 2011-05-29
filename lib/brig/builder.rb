@@ -25,12 +25,12 @@ require 'fileutils'
 
 module Brig
 
+  def self.build(target_dir, opts={})
+
+    Brig::Builder.new.build(target_dir, opts)
+  end
+
   class Builder
-
-    def self.build(target_dir, opts={})
-
-      Brig::Builder.new.build(target_dir, opts)
-    end
 
     def self.default_model
 
