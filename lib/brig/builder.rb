@@ -209,7 +209,7 @@ module Brig
       target
 
     rescue Exception => e
-      puts "** failed to copy #{source}"
+      #puts "** failed to copy #{source}"
       raise e
     end
   end
