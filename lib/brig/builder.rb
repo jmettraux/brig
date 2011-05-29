@@ -27,7 +27,7 @@ module Brig
 
   class Builder
 
-    def self.build_chroot(target_dir, opts={})
+    def self.build(target_dir, opts={})
 
       Brig::Builder.new.build(target_dir, opts)
     end
