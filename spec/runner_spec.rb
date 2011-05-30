@@ -34,7 +34,14 @@ describe Brig do
 
   describe '.eval' do
 
-    it 'receives ruby code and returns the stdout as a string'
+    it 'receives ruby code and returns the stdout as a string' do
+
+      out, err = Brig.eval('p :hello', :chroot => 'spec_target')
+
+      err.should == ''
+      out.chomp.should == ':hello'
+    end
+
     it 'receives ruby code and parses the stdout as JSON if possible'
   end
 end

@@ -30,6 +30,11 @@ module Brig
     Brig::Runner.new(opts).exec(command)
   end
 
+  def self.eval(ruby_code, opts={})
+
+    Brig::Runner.new(opts).eval(ruby_code)
+  end
+
   DARWIN_USERNAME = 'nobody'
 
   class Runner
@@ -39,7 +44,7 @@ module Brig
       @opts = opts
     end
 
-    def exec(command)
+    def exec(command, stdin=nil)
 
       chroot = @opts[:chroot] || 'target'
 
@@ -53,23 +58,33 @@ module Brig
 
       com << command
 
-      # TODO if right_popen is present, use it
+      com = com.flatten
 
-      popen(com)
+      popen(com, stdin)
+    end
+
+    def eval(ruby_code)
+
+      # TODO : unhardcode ruby path
+
+      exec([ '/ruby/bin/ruby', '-e', "eval(STDIN.read)" ], ruby_code)
     end
 
     protected
 
-    def popen(command)
+    def popen(command, stdin=nil)
+
+      # TODO if right_popen is present, use it
 
       sout, serr = nil
 
       Open3.popen3(*command) do |si, so, se, wt|
+        si.write(stdin) if stdin
+        si.flush
+        si.close
         sout = so.read
         serr = se.read
       end
-
-      puts serr
 
       [ sout, serr ]
     end
