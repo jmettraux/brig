@@ -22,7 +22,20 @@
 
 module Brig
 
+  def self.exec(code, opts={})
+
+    Brig::Runner.new(opts).exec(code)
+  end
+
   class Runner
+
+    def initialize(opts)
+
+      @opts = opts
+    end
+
+    def exec(code)
+    end
   end
 end
 

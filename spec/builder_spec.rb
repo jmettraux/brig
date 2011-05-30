@@ -19,8 +19,7 @@ describe Brig do
   describe '.build' do
 
     after(:each) do
-
-      FileUtils.rm_rf('spec_target')
+      nuke_brig
     end
 
     it 'builds a chroot place' do

@@ -78,7 +78,7 @@ if target_dir == nil
   exit(1)
 end
 
-Brig::Builder.build(
+Brig.build(
   target_dir,
   :verbose => verbose,
   :model => model,
