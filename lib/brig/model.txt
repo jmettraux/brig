@@ -31,16 +31,12 @@ cat
 echo
 env
 uuidgen
-ping
-host
-dig
-nslookup
-curl
-expr
+#ping
+#host
+#dig
+#nslookup
+#curl
+#expr
 
 strace ?
-#dtruss ?
-#dtrace ?
-#/usr/lib/dtrace/ ?
-#/mach_kernel ?
 

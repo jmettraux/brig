@@ -102,13 +102,8 @@ module Brig
         elsif File.directory?(path)
           copy_dir(path)
         else
-          copy(path)
+          copy_app_or_lib(path)
         end
-      end
-
-      if uname == 'Darwin'
-        FileUtils.mkdir(@target_dir.join('dev'))
-        `mknod #{@target_dir.join('dev/dtrace')} c 24 2`
       end
 
       if @verbose
@@ -135,35 +130,34 @@ module Brig
 
     def copy_pattern(path)
 
-      Dir[path].each { |pa| copy(pa) }
+      Dir[path].each { |pa| copy_app_or_lib(pa) }
+    end
+
+    def is_lib?(path)
+
+      path.match(/^lib|\.bundle$|\.dylib$|\.so$|\.so2$/)
     end
 
     def copy_dir(path)
 
-      # at first, copy the stuff cp -pR path
+      #puts "..#{path}"
 
-      FileUtils.mkdir_p(File.dirname(@target_dir.join(path)))
-      FileUtils.cp_r(path, @target_dir.join(path), :preserve => true)
+      FileUtils.mkdir_p(@target_dir.join(path))
 
-      tell("dir: #{path}")
-
-      # then make sure that each lib in there has its dependencies
-      # satisfied
-
-      libs =
-        Dir[File.join(path, '**', '*.dylib')] +
-        Dir[File.join(path, '**', '*.bundle')] +
-        Dir[File.join(path, '**', '*.so')] +
-        Dir[File.join(path, '**', '*.so.2')]
-
-      libs.each { |lib| copy(lib, 1) }
+      Dir.new(path).each do |pa|
+        next if pa == '.' or pa == '..'
+        pat = File.join(path, pa)
+        if is_lib?(pat)
+          copy_app_or_lib(pat, 1)
+        elsif File.directory?(pat)
+          copy_dir(pat)
+        else
+          cp(pat)
+        end
+      end
     end
 
-    #def is_lib?(path)
-    #  path.match(/^lib|\.bundle$|\.dylib$|\.so$/)
-    #end
-
-    def copy(app_or_lib, depth=0)
+    def copy_app_or_lib(app_or_lib, depth=0)
 
       return unless app_or_lib
 
@@ -195,7 +189,7 @@ module Brig
 
         @seen_libs << lib
 
-        copy(lib, depth + 1)
+        copy_app_or_lib(lib, depth + 1)
       end
     end
 
