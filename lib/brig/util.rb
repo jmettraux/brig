@@ -23,11 +23,15 @@
 
 module Brig
 
-  # Returns 'Linux' or 'Darwin' or ...
+  # Returns 'Linux' or 'Darwin' or raises a runtime error.
   #
   def self.uname
 
-    @uname ||= `uname`.chomp
+    @uname ||= case RUBY_PLATFORM
+      when /darwin/ then 'Darwin'
+      when /linux/ then 'Linux'
+      else raise("unsupported platform... #{RUBY_PLATFORM}")
+    end
   end
 end
 
