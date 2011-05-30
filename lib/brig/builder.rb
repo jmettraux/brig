@@ -82,7 +82,7 @@ module Brig
 
       # adding indispensible apps
 
-      if uname == 'Darwin'
+      if Brig.uname == 'Darwin'
         model.unshift([ '/usr/lib/dyld' ])
       else
         model.unshift([ 'ld' ])
@@ -129,11 +129,6 @@ module Brig
     end
 
     protected
-
-    def uname
-
-      @uname ||= `uname`.chomp
-    end
 
     def tell(message)
 
@@ -186,7 +181,7 @@ module Brig
         tell(("  " * (depth + 1)) + "lib: " + app_or_lib)
       end
 
-      ldd = (uname == 'Darwin') ? 'otool -L' : 'ldd'
+      ldd = (Brig.uname == 'Darwin') ? 'otool -L' : 'ldd'
 
       lddout = `#{ldd} #{app_or_lib}`
 

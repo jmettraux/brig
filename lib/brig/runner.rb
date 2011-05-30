@@ -20,12 +20,17 @@
 # THE SOFTWARE.
 #++
 
+require 'open3'
+
+
 module Brig
 
-  def self.exec(code, opts={})
+  def self.exec(command, opts={})
 
-    Brig::Runner.new(opts).exec(code)
+    Brig::Runner.new(opts).exec(command)
   end
+
+  DARWIN_USERNAME = 'nobody'
 
   class Runner
 
@@ -34,7 +39,39 @@ module Brig
       @opts = opts
     end
 
-    def exec(code)
+    def exec(command)
+
+      chroot = @opts[:chroot] || 'target'
+
+      com = %w[ sudo chroot ]
+
+      com += if Brig.uname == 'Darwin'
+        [ '-u', DARWIN_USERNAME, chroot ]
+      else
+        [ chroot, 'su', '-', 'brig' ]
+      end
+
+      com << command
+
+      # TODO if right_popen is present, use it
+
+      popen(com)
+    end
+
+    protected
+
+    def popen(command)
+
+      sout, serr = nil
+
+      Open3.popen3(*command) do |si, so, se, wt|
+        sout = so.read
+        serr = se.read
+      end
+
+      puts serr
+
+      [ sout, serr ]
     end
   end
 end

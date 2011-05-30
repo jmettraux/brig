@@ -20,8 +20,14 @@
 # THE SOFTWARE.
 #++
 
-require 'brig/version'
-require 'brig/util'
-require 'brig/builder'
-require 'brig/runner'
+
+module Brig
+
+  # Returns 'Linux' or 'Darwin' or ...
+  #
+  def self.uname
+
+    @uname ||= `uname`.chomp
+  end
+end
 
