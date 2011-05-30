@@ -40,3 +40,14 @@ uuidgen
 
 strace ?
 
+/ruby ?
+
+! /\/tcltklib\./
+! /\/tkutil\./
+#! /\/Tcl\.framework/
+#! /\/Tk\.framework/
+#! /\/Cocoa\.framework/
+#! /\/Carbon\.framework/
+  #
+  # shaving 200M of libs
+

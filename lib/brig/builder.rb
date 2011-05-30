@@ -56,6 +56,7 @@ module Brig
       @opts = opts
       @verbose = opts[:verbose]
       @target_dir = File.expand_path(target_dir)
+      @excluded = []
 
       class << @target_dir
         def join(*args)
@@ -87,10 +88,21 @@ module Brig
         model.unshift([ 'ld' ])
       end
 
+      @excluded = model.inject([]) { |a, item|
+        if item[0] == '!'
+          pattern = item[1]
+          pattern = Regexp.new(pattern[1..-2]) if pattern.match(/^\/.+\/$/)
+          a << pattern
+        end
+        a
+      }
+
       model.each do |item|
 
         pa = item.first
         optional = item.include?('?')
+
+        next if pa == '!'
 
         path = pa.match(/^\//) ? pa : `which #{pa}`.chomp
         puts ". #{pa} -> #{path}" if @verbose
@@ -160,6 +172,7 @@ module Brig
     def copy_app_or_lib(app_or_lib, depth=0)
 
       return unless app_or_lib
+      return if @excluded.find { |pat| app_or_lib.match(pat) }
 
       target = cp(app_or_lib)
 
