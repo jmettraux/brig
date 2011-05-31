@@ -34,7 +34,13 @@ describe Brig do
 
   describe '.run' do
 
-    it 'flips burgers'
+    it 'receives ruby code and returns [ stdout, stderr ]' do
+
+      out, err = Brig.run('p :hello', :chroot => 'spec_target')
+
+      err.should == ''
+      out.chomp.should == ':hello'
+    end
   end
 
   describe '.eval' do
@@ -43,7 +49,7 @@ describe Brig do
 
       out = Brig.eval(':hello', :chroot => 'spec_target')
 
-      out.chomp.should == 'hello'
+      out.should == 'hello'
     end
 
     it 'receives ruby code and returns the result as JSON' do
