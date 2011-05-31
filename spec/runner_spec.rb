@@ -32,17 +32,39 @@ describe Brig do
     end
   end
 
+  describe '.run' do
+
+    it 'flips burgers'
+  end
+
   describe '.eval' do
 
-    it 'receives ruby code and returns the stdout as a string' do
+    it 'receives ruby code and returns the result as a string' do
 
-      out, err = Brig.eval('p :hello', :chroot => 'spec_target')
+      out = Brig.eval(':hello', :chroot => 'spec_target')
 
-      err.should == ''
-      out.chomp.should == ':hello'
+      out.chomp.should == 'hello'
     end
 
-    it 'receives ruby code and parses the stdout as JSON if possible'
+    it 'receives ruby code and returns the result as JSON' do
+
+      out = Brig.eval('[ 1, 2, 3 ]', :chroot => 'spec_target')
+
+      out.should == [ 1, 2, 3 ]
+    end
+
+    it 'raises an EvalError when failing' do
+
+      err = begin
+        Brig.eval('do_fail', :chroot => 'spec_target')
+      rescue => e
+        err = e
+      end
+
+      err.class.should == Brig::Runner::EvalError
+      err.code.should == 'do_fail'
+      err.stderr.should match(/undefined local variable/)
+    end
   end
 end
 

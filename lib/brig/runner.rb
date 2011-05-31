@@ -30,6 +30,11 @@ module Brig
     Brig::Runner.new(opts).exec(command)
   end
 
+  def self.run(ruby_code, opts={})
+
+    Brig::Runner.new(opts).run(ruby_code)
+  end
+
   def self.eval(ruby_code, opts={})
 
     Brig::Runner.new(opts).eval(ruby_code)
@@ -38,6 +43,25 @@ module Brig
   DARWIN_USERNAME = 'nobody'
 
   class Runner
+
+    class EvalError < RuntimeError
+
+      attr_reader :code
+      attr_reader :stderr
+
+      def initialize(code, stderr)
+        @code = code
+        @stderr = stderr
+        super('eval failed')
+      end
+    end
+
+    REQUIRE_JSON = %w[ yajl json json_pure ].collect { |json|
+      "begin; require('#{json}'); rescue LoadError; end"
+    }.join(' || ') + "; require 'rufus-json'; "
+
+    eval(REQUIRE_JSON)
+      # let's use it on this side of the chroot...
 
     def initialize(opts)
 
@@ -63,11 +87,28 @@ module Brig
       popen(com, stdin)
     end
 
+    def run(ruby_code)
+
+      # TODO : unhardcode ruby path
+
+      exec([
+        '/ruby/bin/ruby',
+        '-e', "eval(STDIN.read)"
+      ], ruby_code)
+    end
+
     def eval(ruby_code)
 
       # TODO : unhardcode ruby path
 
-      exec([ '/ruby/bin/ruby', '-e', "eval(STDIN.read)" ], ruby_code)
+      sout, serr = exec([
+        '/ruby/bin/ruby',
+        '-e', REQUIRE_JSON + 'puts Rufus::Json.dump(eval(STDIN.read))'
+      ], ruby_code)
+
+      raise EvalError.new(ruby_code, serr) if serr != ''
+
+      Rufus::Json.load(sout)
     end
 
     protected

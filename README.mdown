@@ -22,11 +22,16 @@ Grab a Ruby and untar it, cd into it and
 
     .configure --prefix=/ruby; make; sudo make install
 
+Once the Ruby is compiled successfully, install at least a JSON gem and rufus-json in that ruby
+
+  sudo /ruby/bin/gem install yajl-ruby rufus-json
+
+
 ### building
 
-pass the Ruby prefix with -i
+-v will make the building "verbose". It expects a Ruby install at /ruby
 
-    sudo ./bin/build.rb -v -i /ruby target
+    sudo ./bin/build.rb -v target
 
 
 ## testing

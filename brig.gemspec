@@ -27,7 +27,9 @@ Creating chroot jails and running stuff in them.
     '*.gemspec', '*.txt', '*.rdoc', '*.md', '*.mdown'
   ]
 
-  #s.add_runtime_dependency 'rufus-treechecker', '>= 1.0.6'
+  s.add_runtime_dependency 'json'
+  s.add_runtime_dependency 'yajl-ruby'
+  s.add_runtime_dependency 'rufus-json', '>= 1.0.0'
 
   s.add_development_dependency 'rspec'
 
