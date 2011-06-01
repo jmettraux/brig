@@ -1,5 +1,6 @@
 
 == contributors
 
+Raphael Simon - https://github.com/raphael
 Alain Hoang - https://github.com/hoanga
 

@@ -6,10 +6,10 @@ describe Brig::Builder do
 
   describe '.default_model' do
 
-    it 'returns lib/brig/model.txt' do
+    it 'returns lib/brig/template.txt' do
 
-      Brig::Builder.default_model.should ==
-        File.read(File.join(File.dirname(__FILE__), '../lib/brig/model.txt'))
+      Brig::Builder.default_template.should ==
+        File.read(File.join(File.dirname(__FILE__), '../lib/brig/template.txt'))
     end
   end
 end

@@ -9,3 +9,7 @@
 [ ] move libs and apps to config file
 [ ] some kind of regular user (not root)
 
+[ ] automate sudo ruby install (with gem list install... bundler ? it's slow)
+    /brig_ruby/
+[ ] Rakefile / tasks / package chroots for given archs... ?
+

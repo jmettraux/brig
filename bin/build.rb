@@ -26,15 +26,15 @@ def puts_usage
   puts %{
   sudo #{$0} --show
 
-    shows the default model used to build the chroot environment
+    shows the default template used to build the chroot environment
 
   sudo #{$0} [-v] {target_dir}
 
-    builds a chroot directory with the default model
+    builds a chroot directory with the default template
 
   sudo #{$0} [-v] -i /ruby/bin/ruby -i /ruby/lib/ {target_dir}
 
-    builds a chroot directory with the default model but adds one or
+    builds a chroot directory with the default template but adds one or
     more -i items (here Ruby and its libraries)
   }
 end
@@ -58,13 +58,13 @@ end
 
 verbose = false
 items = []
-model = nil
+template = nil
 target_dir = nil
 
 while arg = ARGV.shift
   case arg
     when '-v', '--verbose' then verbose = true
-    when '-m', '--model' then model = ARGV.shift
+    when '-t', '--template' then template = ARGV.shift
     when '-i' then items << ARGV.shift
     else target_dir = arg
   end
@@ -81,6 +81,6 @@ end
 Brig.build(
   target_dir,
   :verbose => verbose,
-  :model => model,
+  :template => template,
   :items => items)
 

@@ -32,16 +32,16 @@ module Brig
 
   class Builder
 
-    def self.default_model
+    def self.default_template
 
-      File.read(File.join(File.dirname(__FILE__), 'model.txt'))
+      File.read(File.join(File.dirname(__FILE__), 'template.txt'))
     end
 
-    def self.read_model(model_path)
+    def self.read_template(template_path)
 
-      model = model_path ? File.read(model_path) : default_model
+      template = template_path ? File.read(template_path) : default_template
 
-      model.split("\n").inject([]) { |a, line|
+      template.split("\n").inject([]) { |a, line|
         if line.strip.match(/^[^#]/)
           a << line.split(/\s+/).select { |w| ! w.match(/^#/) }
         end
@@ -77,18 +77,18 @@ module Brig
       cp('/etc/passwd')
       cp('/etc/shadow') rescue nil
 
-      model = Builder.read_model(opts[:model])
-      model += (opts[:items] || [])
+      template = Builder.read_template(opts[:template])
+      template += (opts[:items] || [])
 
       # adding indispensible apps
 
       if Brig.uname == 'Darwin'
-        model.unshift([ '/usr/lib/dyld' ])
+        template.unshift([ '/usr/lib/dyld' ])
       else
-        model.unshift([ 'ld' ])
+        template.unshift([ 'ld' ])
       end
 
-      @excluded = model.inject([]) { |a, item|
+      @excluded = template.inject([]) { |a, item|
         if item[0] == '!'
           pattern = item[1]
           pattern = Regexp.new(pattern[1..-2]) if pattern.match(/^\/.+\/$/)
@@ -97,7 +97,7 @@ module Brig
         a
       }
 
-      model.each do |item|
+      template.each do |item|
 
         pa = item.first
         optional = item.include?('?')
