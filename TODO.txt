@@ -13,3 +13,5 @@
     /brig_ruby/
 [ ] Rakefile / tasks / package chroots for given archs... ?
 
+[o] use rufus-json's load_any_backend
+

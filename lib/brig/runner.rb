@@ -21,6 +21,7 @@
 #++
 
 require 'open3'
+require 'rufus-json/automatic'
 
 
 module Brig
@@ -56,13 +57,6 @@ module Brig
       end
     end
 
-    REQUIRE_JSON = %w[ yajl json json_pure ].collect { |json|
-      "begin; require('#{json}'); rescue LoadError; end"
-    }.join(' || ') + "; require 'rufus-json'; "
-
-    eval(REQUIRE_JSON)
-      # let's use it on this side of the chroot...
-
     def initialize(opts)
 
       @opts = opts
@@ -96,6 +90,8 @@ module Brig
         '-e', "eval(STDIN.read)"
       ], ruby_code)
     end
+
+    REQUIRE_JSON = "require 'rufus-json/automatic'; "
 
     def eval(ruby_code)
 

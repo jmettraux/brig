@@ -29,7 +29,7 @@ Creating chroot jails and running stuff in them.
 
   s.add_runtime_dependency 'json'
   s.add_runtime_dependency 'yajl-ruby'
-  s.add_runtime_dependency 'rufus-json', '>= 1.0.0'
+  s.add_runtime_dependency 'rufus-json', '>= 1.0.1'
 
   s.add_development_dependency 'rspec'
 
