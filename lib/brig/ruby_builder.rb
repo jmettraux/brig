@@ -28,14 +28,6 @@ module Brig
     RubyBuilder.new(opts).build
   end
 
-  # steal archive to rvm
-  #
-  # or download from
-  # http://ftp.ruby-lang.org/pub/ruby/1.9/ruby-1.9.2-p180.tar.gz
-  #
-  # ./configure --prefix=/brig_ruby && make && make install
-  # (sudoed)
-
   class RubyBuilder
 
     include BuilderHelper
@@ -46,11 +38,13 @@ module Brig
 
       @version = opts[:version] || '1.9.2-p180'
       @verbose = opts[:verbose]
-      @gems = %w[ yajl-ruby rufus-json ] + (opts[:gems] || [])
+      @gems = (%w[ yajl-ruby rufus-json ] + (opts[:gems] || [])).join(' ')
       @target_dir = opts[:target_dir] || '/brig_ruby'
     end
 
     def build
+
+      start = Time.now
 
       raise(
         "cannot build ruby when not root, please sudo"
@@ -64,7 +58,7 @@ module Brig
 
       tell ". found ruby archive at \n    #{arc}"
 
-      FileUtils.cp(arc, TMP_DIR)
+      FileUtils.cp(arc, TMP_DIR) rescue nil
 
       farc = File.basename(arc)
 
@@ -91,6 +85,10 @@ module Brig
       `#{File.join(@target_dir, 'bin/gem')} install #{@gems}`
 
       tell ". installed gems \n    #{@gems}"
+
+      tell ". ruby install done"
+      tell "    weighs " + `du -sh #{@target_dir}`.strip.split(' ').first
+      tell "    took #{Time.now - start}s"
     end
 
     protected
@@ -109,7 +107,22 @@ module Brig
 
     def download_archive
 
-      # TODO
+      fname = "ruby-#{@version}.tar.gz"
+      target = File.join(TMP_DIR, fname)
+
+      if File.exist?(target)
+
+        tell ". already downloaded at \n    #{target}"
+
+      else
+
+        start = Time.now
+        `curl -s http://ftp.ruby-lang.org/pub/ruby/1.9/#{fname} -o #{target}`
+
+        tell ". downloaded in #{Time.now - start}s at \n    #{target}"
+      end
+
+      target
     end
   end
 end
