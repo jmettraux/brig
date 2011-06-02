@@ -146,8 +146,6 @@ module Brig
 
     def copy_dir(path)
 
-      #puts "..#{path}"
-
       FileUtils.mkdir_p(@target_dir.join(path))
 
       Dir.new(path).each do |pa|
@@ -166,7 +164,11 @@ module Brig
     def copy_app_or_lib(app_or_lib, depth=0)
 
       return unless app_or_lib
-      return if @excluded.find { |pat| app_or_lib.match(pat) }
+
+      if @excluded.find { |pat| app_or_lib.match(pat) }
+        tell(("  " * (depth + 1)) + "! excluded: " + app_or_lib)
+        return
+      end
 
       target = cp(app_or_lib)
 
