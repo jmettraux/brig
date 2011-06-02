@@ -21,7 +21,8 @@
 #++
 
 require 'brig/version'
-require 'brig/util'
+require 'brig/misc'
 require 'brig/builder'
+require 'brig/ruby_builder'
 require 'brig/runner'
 

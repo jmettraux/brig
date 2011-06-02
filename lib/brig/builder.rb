@@ -32,6 +32,8 @@ module Brig
 
   class Builder
 
+    include BuilderHelper
+
     def self.default_template
 
       File.read(File.join(File.dirname(__FILE__), 'template.txt'))
@@ -50,6 +52,10 @@ module Brig
     end
 
     def build(target_dir, opts)
+
+      raise(
+        "cannot build ruby when not root, please sudo"
+      ) unless `id`.match(/^uid=0\(root\)/)
 
       start = Time.now
 
@@ -118,22 +124,15 @@ module Brig
         end
       end
 
-      if @verbose
-        puts
-        puts "success"
-        puts "  #{`du -sh #{@target_dir}`}"
-        puts "  took #{Time.now - start}s"
-        puts "  copied #{@seen_libs.size} libs"
-        puts
-      end
+      tell
+      tell "success"
+      tell "  #{`du -sh #{@target_dir}`}"
+      tell "  took #{Time.now - start}s"
+      tell "  copied #{@seen_libs.size} libs"
+      tell
     end
 
     protected
-
-    def tell(message)
-
-      puts(message) if @verbose
-    end
 
     def copy_pattern(path)
 

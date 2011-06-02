@@ -86,11 +86,12 @@ module Brig
       # TODO : unhardcode ruby path
 
       exec([
-        '/ruby/bin/ruby',
+        RUBY_EXE,
         '-e', "eval(STDIN.read)"
       ], ruby_code)
     end
 
+    RUBY_EXE = '/brig_ruby/bin/ruby'
     REQUIRE_JSON = "require 'rufus-json/automatic'; "
 
     def eval(ruby_code)
@@ -98,7 +99,7 @@ module Brig
       # TODO : unhardcode ruby path
 
       sout, serr = exec([
-        '/ruby/bin/ruby',
+        RUBY_EXE,
         '-e', REQUIRE_JSON + 'puts Rufus::Json.dump(eval(STDIN.read))'
       ], ruby_code)
 

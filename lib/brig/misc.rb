@@ -1,5 +1,4 @@
-#!/usr/bin/env ruby
-
+#--
 # Copyright (c) 2011-2011, John Mettraux, jmettraux@gmail.com
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,65 +18,30 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+#++
 
+module Brig
 
-$:.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-require 'rubygems'
-require 'brig'
+  # Returns 'Linux' or 'Darwin' or raises a runtime error.
+  #
+  def self.uname
 
+    @uname ||= case RUBY_PLATFORM
+      when /darwin/ then 'Darwin'
+      when /linux/ then 'Linux'
+      else raise("unsupported platform... #{RUBY_PLATFORM}")
+    end
+  end
 
-def puts_usage
-  puts %{
-  sudo #{$0} --show
+  #
+  # A few methods shared by the builders.
+  #
+  module BuilderHelper
 
-    shows the default template used to build the chroot environment
+    def tell(msg='')
 
-  sudo #{$0} [-v] {target_dir}
-
-    builds a chroot directory with the default template
-
-  sudo #{$0} [-v] -i /ruby/bin/ruby -i /ruby/lib/ {target_dir}
-
-    builds a chroot directory with the default template but adds one or
-    more -i items (here Ruby and its libraries)
-  }
-end
-
-if ARGV.length < 1
-  puts_usage
-  exit(0)
-end
-
-if ARGV.include?('--show')
-  puts Brig::Builder.default_model
-  exit(0)
-end
-
-verbose = false
-items = []
-template = nil
-target_dir = nil
-
-while arg = ARGV.shift
-  case arg
-    when '-v', '--verbose' then verbose = true
-    when '-t', '--template' then template = ARGV.shift
-    when '-i' then items << ARGV.shift
-    else target_dir = arg
+      puts(msg) if @verbose
+    end
   end
 end
-
-if target_dir == nil
-  puts %{
-** missing a target dir
-  }
-  puts_usage
-  exit(1)
-end
-
-Brig.build(
-  target_dir,
-  :verbose => verbose,
-  :template => template,
-  :items => items)
 

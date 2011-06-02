@@ -1,4 +1,5 @@
-#--
+#!/usr/bin/env ruby
+
 # Copyright (c) 2011-2011, John Mettraux, jmettraux@gmail.com
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,20 +19,28 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-#++
 
 
-module Brig
+$:.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
+require 'rubygems'
+require 'brig'
 
-  # Returns 'Linux' or 'Darwin' or raises a runtime error.
-  #
-  def self.uname
 
-    @uname ||= case RUBY_PLATFORM
-      when /darwin/ then 'Darwin'
-      when /linux/ then 'Linux'
-      else raise("unsupported platform... #{RUBY_PLATFORM}")
-    end
-  end
+def puts_usage
+  puts %{
+  sudo #{$0} [-v]
+
+    builds a Ruby into /brig_ruby
+  }
 end
+
+if ARGV.include?('-h') or ARGV.include?('--help')
+  puts_usage
+  exit(0)
+end
+
+verbose = ARGV.include?('-v') || ARGV.include?('--verbose')
+
+Brig.build_ruby(
+  :verbose => verbose)
 
