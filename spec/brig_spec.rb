@@ -18,7 +18,7 @@ describe 'a brig' do
     stdout.strip.should == ''
 
     if Brig.uname == 'Darwin'
-      stderr.should match(/orly?/)
+      stderr.should match(/su - id: No such file or directory/)
     else
       stderr.should match(/must be run from a terminal/)
     end
@@ -31,7 +31,7 @@ describe 'a brig' do
     stdout.strip.should == ''
 
     if Brig.uname == 'Darwin'
-      stderr.should match(/orly?/)
+      stderr.should == ''
     else
       stderr.should match(/must be run from a terminal/)
     end
