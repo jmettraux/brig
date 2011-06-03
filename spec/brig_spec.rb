@@ -13,7 +13,11 @@ describe 'a brig' do
 
   it 'disallows su-ing for root' do
 
-    stdout, stderr = Brig.exec('su - id', :chroot => 'spec_target')
+    stdout, stderr = nil
+
+    Brig.exec('su - id', :chroot => 'spec_target') do |out, err|
+      stdout, stderr = out, err
+    end
 
     stdout.strip.should == ''
 
@@ -26,7 +30,11 @@ describe 'a brig' do
 
   it 'disallows su-ing for root via Ruby' do
 
-    stdout, stderr = Brig.run('puts `su - id`', :chroot => 'spec_target')
+    stdout, stderr = nil
+
+    Brig.run('puts `su - id`', :chroot => 'spec_target') do |out, err|
+      stdout, stderr = out, err
+    end
 
     stdout.strip.should == ''
 
