@@ -66,33 +66,26 @@ module Brig
 
       chroot = @opts[:chroot] || 'target'
 
-      com = %w[ sudo chroot ]
-
-      com += if Brig.uname == 'Darwin'
-        [ '-u', DARWIN_USERNAME, chroot ]
+      com = if Brig.uname == 'Darwin'
+        [ 'sudo', 'chroot', '-u', DARWIN_USERNAME, chroot ] + command
       else
-        [ chroot, 'su', '-', 'brig' ]
+        command = Array(command).join(' ')
+        [ 'sudo', 'chroot', chroot, 'su', '-', 'brig', '-c', command ]
       end
-
-      com << command
-
-      com = com.flatten
 
       popen(com, stdin)
     end
+
+    RUBY_EXE = '/brig_ruby/bin/ruby'
 
     def run(ruby_code)
 
       # TODO : unhardcode ruby path
 
       exec([
-        RUBY_EXE,
-        '-e', "eval(STDIN.read)"
+        RUBY_EXE, '-e', '"eval(STDIN.read)"'
       ], ruby_code)
     end
-
-    RUBY_EXE = '/brig_ruby/bin/ruby'
-    REQUIRE_JSON = "require 'rufus-json/automatic'; "
 
     def eval(ruby_code)
 
@@ -100,7 +93,9 @@ module Brig
 
       sout, serr = exec([
         RUBY_EXE,
-        '-e', REQUIRE_JSON + 'puts Rufus::Json.dump(eval(STDIN.read))'
+        '-e',
+        "\"require 'rufus-json/automatic'; " +
+        "puts Rufus::Json.dump(eval(STDIN.read))\""
       ], ruby_code)
 
       raise EvalError.new(ruby_code, serr) if serr != ''
