@@ -14,17 +14,19 @@ set of ruby tools for chroot on OSX / GNU/Linux
 
 Running ruby code in the chroot goes like :
 
-    brig = Brig.new('chroot_dir')
-    stdout, stderr = brig.run(ruby_code)
+    Brig.run(ruby_code, :chroot_dir => '/brig') do |stdout, stderr|
+      p stdout, stderr
+    end
 
 Usually you want the return value of the ruby code (as a Ruby object).
 
-    brig = Brig.new('chroot_dir')
-    result = brig.eval(ruby_code)
+    brig.eval(
+      ruby_code,
+      :chroot_dir => '/brig',
+      :on_success => lambda { |result| p [ :result, result ] },
+      :on_failure => lambda { |stderr, code| p [ :issue, stderr ] })
 
 Please note that the return from the Ruby in the chroot is done thanks to JSON.
-
-If there was an error during the .eval call, a Brig::Runner::EvalError is emitted (this class has a #code and a #stderr accessors).
 
 
 ## building a chroot

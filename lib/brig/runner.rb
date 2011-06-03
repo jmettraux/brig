@@ -26,14 +26,14 @@ require 'rufus-json/automatic'
 
 module Brig
 
-  def self.exec(command, opts={})
+  def self.exec(command, opts={}, &block)
 
-    Brig::Runner.new(opts).exec(command)
+    Brig::Runner.new(opts).exec(command, &block)
   end
 
-  def self.run(ruby_code, opts={})
+  def self.run(ruby_code, opts={}, &block)
 
-    Brig::Runner.new(opts).run(ruby_code)
+    Brig::Runner.new(opts).run(ruby_code, &block)
   end
 
   def self.eval(ruby_code, opts={})
@@ -45,26 +45,12 @@ module Brig
 
   class Runner
 
-    class EvalError < RuntimeError
-
-      attr_reader :code
-      attr_reader :stderr
-
-      def initialize(code, stderr)
-        @code = code
-        @stderr = stderr
-        super('eval failed')
-      end
-    end
-
     def initialize(opts)
 
       @opts = opts
     end
 
-    # Exec a command in the chroot (there are not much commands in there).
-    #
-    def exec(command, stdin=nil)
+    def exec(command, stdin=nil, &block)
 
       chroot = @opts[:chroot] || 'target'
 
@@ -75,33 +61,31 @@ module Brig
         [ 'sudo', 'chroot', chroot, 'su', '-', 'brig', '-c', command ]
       end
 
-      popen(com, stdin)
+      popen(com, stdin, &block)
     end
 
-    # Run some ruby code in the chroot (and return [ stdout, stderr ]).
-    #
-    def run(ruby_code)
+    def run(ruby_code, &block)
 
-      do_run(ruby_code, false)
+      do_run(ruby_code, false, &block)
     end
 
-    # Evals some ruby code in the chroot. Return the result (transferred
-    # via JSON) or raise an Brig::Runner::EvalError.
-    #
     def eval(ruby_code)
 
-      sout, serr = do_run(ruby_code, true)
+      do_run(ruby_code, true) do |stdout, stderr|
 
-      raise EvalError.new(ruby_code, serr) if serr != ''
-
-      Rufus::Json.load(sout)
+        if stderr != ''
+          @opts[:on_failure].call(stderr, ruby_code)
+        else
+          @opts[:on_success].call(Rufus::Json.load(stdout))
+        end
+      end
     end
 
     protected
 
     RUBY_EXE = '/brig_ruby/bin/ruby'
 
-    def do_run(ruby_code, json)
+    def do_run(ruby_code, json, &block)
 
       # TODO : unhardcode ruby path
 
@@ -113,24 +97,24 @@ module Brig
       end
       program = program.inspect if Brig.uname == 'Linux'
 
-      exec([ RUBY_EXE, '-e', program ], ruby_code)
+      exec([ RUBY_EXE, '-e', program ], ruby_code, &block)
     end
 
-    def popen(command, stdin=nil)
+    def popen(command, stdin=nil, &block)
 
-      # TODO if right_popen is present, use it
-
-      sout, serr = nil
+      # TODO if EM is present and running, use right_popen
 
       Open3.popen3(*command) do |si, so, se, wt|
+
         si.write(stdin) if stdin
         si.flush
         si.close
-        sout = so.read
-        serr = se.read
-      end
 
-      [ sout, serr ]
+        stdout = so.read
+        stderr = se.read
+
+        block.call(stdout, stderr)
+      end
     end
   end
 end

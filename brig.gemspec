@@ -31,6 +31,7 @@ Creating chroot jails and running stuff in them.
   s.add_runtime_dependency 'yajl-ruby'
   s.add_runtime_dependency 'rufus-json', '>= 1.0.1'
 
+  s.add_development_dependency 'right_popen', '1.0.11'
   s.add_development_dependency 'rspec'
 
   s.require_path = 'lib'

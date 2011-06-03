@@ -14,60 +14,86 @@ describe Brig do
     nuke_brig
   end
 
-  describe '.exec' do
+  context 'without EM' do
 
-    it 'returns the stdout and stderr for a give command' do
+    describe '.exec' do
 
-      stdout, stderr = Brig.exec('id', :chroot => 'spec_target')
+      it 'returns the stdout and stderr for a give command' do
 
-      stderr.should == ''
+        stdout, stderr = nil
 
-      if Brig.uname == 'Darwin'
-        stdout.should match(/\(nobody\)/)
-      else
-        stdout.should match(/\(brig\)/)
+        Brig.exec('id', :chroot => 'spec_target') do |out, err|
+          stdout = out
+          stderr = err
+        end
+
+        stderr.should == ''
+
+        if Brig.uname == 'Darwin'
+          stdout.should match(/\(nobody\)/)
+        else
+          stdout.should match(/\(brig\)/)
+        end
       end
     end
-  end
 
-  describe '.run' do
+    describe '.run' do
 
-    it 'receives ruby code and returns [ stdout, stderr ]' do
+      it 'receives ruby code and returns [ stdout, stderr ]' do
 
-      out, err = Brig.run('p :hello', :chroot => 'spec_target')
+        stdout, stderr = nil
 
-      err.should == ''
-      out.chomp.should == ':hello'
-    end
-  end
+        Brig.run('p :hello', :chroot => 'spec_target') do |out, err|
+          stdout = out
+          stderr = err
+        end
 
-  describe '.eval' do
-
-    it 'receives ruby code and returns the result as a string' do
-
-      out = Brig.eval(':hello', :chroot => 'spec_target')
-
-      out.should == 'hello'
+        stderr.should == ''
+        stdout.chomp.should == ':hello'
+      end
     end
 
-    it 'receives ruby code and returns the result as JSON' do
+    describe '.eval' do
 
-      out = Brig.eval('[ 1, 2, 3 ]', :chroot => 'spec_target')
+      it 'receives ruby code and returns the result as a string' do
 
-      out.should == [ 1, 2, 3 ]
-    end
+        out = nil
 
-    it 'raises an EvalError when failing' do
+        Brig.eval(
+          ':hello',
+          :chroot => 'spec_target',
+          :on_success => lambda { |result| out = result },
+          :on_failure => lambda { |stderr, code| })
 
-      err = begin
-        Brig.eval('do_fail', :chroot => 'spec_target')
-      rescue => e
-        err = e
+        out.should == 'hello'
       end
 
-      err.class.should == Brig::Runner::EvalError
-      err.code.should == 'do_fail'
-      err.stderr.should match(/undefined local variable/)
+      it 'receives ruby code and returns the result as JSON' do
+
+        out = nil
+
+        Brig.eval(
+          '[ 1, 2, 3 ]',
+          :chroot => 'spec_target',
+          :on_success => lambda { |result| out = result },
+          :on_failure => lambda { |stderr, code| })
+
+        out.should == [ 1, 2, 3 ]
+      end
+
+      it 'calls :on_failure in case of error' do
+
+        stderr, code = nil
+
+        Brig.eval(
+          'do_fail',
+          :chroot => 'spec_target',
+          :on_success => lambda { |result| },
+          :on_failure => lambda { |err, cod| stderr = err; code = cod })
+
+        code.should == 'do_fail'
+        stderr.should match(/undefined local variable/)
+      end
     end
   end
 end
