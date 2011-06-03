@@ -62,12 +62,14 @@ module Brig
       @opts = opts
     end
 
+    # Exec a command in the chroot (there are not much commands in there).
+    #
     def exec(command, stdin=nil)
 
       chroot = @opts[:chroot] || 'target'
 
       com = if Brig.uname == 'Darwin'
-        [ 'sudo', 'chroot', '-u', DARWIN_USERNAME, chroot ] + command
+        [ 'sudo', 'chroot', '-u', DARWIN_USERNAME, chroot ] + Array(command)
       else
         command = Array(command).join(' ')
         [ 'sudo', 'chroot', chroot, 'su', '-', 'brig', '-c', command ]
@@ -76,27 +78,19 @@ module Brig
       popen(com, stdin)
     end
 
-    RUBY_EXE = '/brig_ruby/bin/ruby'
-
+    # Run some ruby code in the chroot (and return [ stdout, stderr ]).
+    #
     def run(ruby_code)
 
-      # TODO : unhardcode ruby path
-
-      exec([
-        RUBY_EXE, '-e', '"eval(STDIN.read)"'
-      ], ruby_code)
+      do_run(ruby_code, false)
     end
 
+    # Evals some ruby code in the chroot. Return the result (transferred
+    # via JSON) or raise an Brig::Runner::EvalError.
+    #
     def eval(ruby_code)
 
-      # TODO : unhardcode ruby path
-
-      sout, serr = exec([
-        RUBY_EXE,
-        '-e',
-        "\"require 'rufus-json/automatic'; " +
-        "puts Rufus::Json.dump(eval(STDIN.read))\""
-      ], ruby_code)
+      sout, serr = do_run(ruby_code, true)
 
       raise EvalError.new(ruby_code, serr) if serr != ''
 
@@ -104,6 +98,23 @@ module Brig
     end
 
     protected
+
+    RUBY_EXE = '/brig_ruby/bin/ruby'
+
+    def do_run(ruby_code, json)
+
+      # TODO : unhardcode ruby path
+
+      program = if json
+        "require 'rufus-json/automatic'; " +
+        "puts Rufus::Json.dump(eval(STDIN.read))"
+      else
+        'eval(STDIN.read)'
+      end
+      program = program.inspect if Brig.uname == 'Linux'
+
+      exec([ RUBY_EXE, '-e', program ], ruby_code)
+    end
 
     def popen(command, stdin=nil)
 
