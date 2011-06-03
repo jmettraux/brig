@@ -18,6 +18,7 @@
 /etc/login.defs ?
 /etc/pam.conf ?
 /etc/pam.d/
+/etc/security/pam_env.conf ?
 /lib/security/ ?
 /usr/lib/libpam*
 /usr/lib/pam/ ?

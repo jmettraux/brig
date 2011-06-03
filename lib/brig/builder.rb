@@ -77,11 +77,19 @@ module Brig
       FileUtils.mkdir_p(@target_dir.join('etc/'))
       FileUtils.mkdir_p(@target_dir.join('home/brig/'))
 
-      #File.open(@target_dir.join('etc/passwd'), 'wb') do |f|
-      #  f.puts 'brig:*:9000:9000:Brig User:/home/brig:/bin/bash'
-      #end
-      cp('/etc/passwd')
-      cp('/etc/shadow') rescue nil
+      if Brig.uname == 'Darwin'
+        cp('/etc/passwd')
+      else
+        File.open(@target_dir.join('etc/passwd'), 'wb') do |f|
+          f.puts 'root:x:0:0:root:/root:/bin/false'
+          f.puts 'brig:x:9000:9000:Brig User:/home/brig:/bin/bash'
+        end
+        File.open(@target_dir.join('etc/shadow'), 'wb') do |f|
+          f.puts 'root:*:15114:0:99999:7:::'
+          f.puts 'brig:*:15114:0:99999:7:::'
+        end
+        # /etc/group ?
+      end
 
       template = Builder.read_template(opts[:template])
       template += (opts[:items] || [])
