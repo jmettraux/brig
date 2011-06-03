@@ -15,16 +15,26 @@ describe 'a brig' do
 
     stdout, stderr = Brig.exec('su - id', :chroot => 'spec_target')
 
-    stdout.should == ''
-    stderr.should_not == ''
+    stdout.strip.should == ''
+
+    if Brig.uname == 'Darwin'
+      stderr.should match(/orly?/)
+    else
+      stderr.should match(/must be run from a terminal/)
+    end
   end
 
   it 'disallows su-ing for root via Ruby' do
 
-    stdout, stderr = Brig.run('puts `(su - id) 2>&1`', :chroot => 'spec_target')
+    stdout, stderr = Brig.run('puts `su - id`', :chroot => 'spec_target')
 
     stdout.strip.should == ''
-    stderr.strip.should_not == ''
+
+    if Brig.uname == 'Darwin'
+      stderr.should match(/orly?/)
+    else
+      stderr.should match(/must be run from a terminal/)
+    end
   end
 end
 
