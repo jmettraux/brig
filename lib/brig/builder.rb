@@ -92,7 +92,6 @@ module Brig
       end
 
       template = Builder.read_template(opts[:template])
-      template += (opts[:items] || [])
 
       # adding indispensible apps
 

@@ -35,11 +35,6 @@ def puts_usage
   sudo #{$0} [-v] {target_dir}
 
     builds a chroot directory with the default template
-
-  sudo #{$0} [-v] -i /ruby/bin/ruby -i /ruby/lib/ {target_dir}
-
-    builds a chroot directory with the default template but adds one or
-    more -i items (here Ruby and its libraries)
   }
 end
 
@@ -62,7 +57,6 @@ while arg = ARGV.shift
   case arg
     when '-v', '--verbose' then verbose = true
     when '-t', '--template' then template = ARGV.shift
-    when '-i' then items << ARGV.shift
     else target_dir = arg
   end
 end
@@ -78,6 +72,5 @@ end
 Brig.build(
   target_dir,
   :verbose => verbose,
-  :template => template,
-  :items => items)
+  :template => template)
 
