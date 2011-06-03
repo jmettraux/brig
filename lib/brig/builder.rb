@@ -64,6 +64,8 @@ module Brig
       @target_dir = File.expand_path(target_dir)
       @excluded = []
 
+      Brig.build_ruby(:verbose => @verbose)
+
       class << @target_dir
         def join(*args)
           args.unshift(self)
@@ -88,7 +90,7 @@ module Brig
           f.puts 'root:*:15114:0:99999:7:::'
           f.puts 'brig:*:15114:0:99999:7:::'
         end
-        # /etc/group ?
+        # /etc/group ? seems not necessary
       end
 
       template = Builder.read_template(opts[:template])
