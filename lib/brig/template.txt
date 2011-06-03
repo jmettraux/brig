@@ -1,5 +1,7 @@
 
+#
 # default chroot template
+#
 
 /etc/hosts
 /etc/resolv.conf ?
@@ -19,6 +21,7 @@
 /lib/security/ ?
 /usr/lib/libpam*
 /usr/lib/pam/ ?
+
 su
 
 /bin/sh
@@ -44,6 +47,5 @@ strace ?
 
 ! /\/tcltklib\./
 ! /\/tkutil\./
-  #
   # shaving 200M of libs
 
