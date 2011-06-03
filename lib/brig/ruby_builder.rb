@@ -25,7 +25,7 @@ module Brig
 
   def self.build_ruby(opts={})
 
-    RubyBuilder.new(opts).build
+    RubyBuilder.new.build(opts)
   end
 
   class RubyBuilder
@@ -34,15 +34,7 @@ module Brig
 
     TMP_DIR = '/tmp/brig_ruby'
 
-    def initialize(opts)
-
-      @version = opts[:version] || '1.9.2-p180'
-      @verbose = opts[:verbose]
-      @gems = (%w[ yajl-ruby rufus-json ] + (opts[:gems] || [])).join(' ')
-      @target_dir = opts[:target_dir] || '/brig_ruby'
-    end
-
-    def build
+    def build(opts)
 
       start = Time.now
 
@@ -50,13 +42,26 @@ module Brig
         "cannot build ruby when not root, please sudo"
       ) unless `id`.match(/^uid=0\(root\)/)
 
+      @version = opts[:version] || '1.9.2-p180'
+      @verbose = opts[:verbose]
+      @gems = (%w[ yajl-ruby rufus-json ] + (opts[:gems] || [])).join(' ')
+      @target_dir = opts[:target_dir] || '/brig_ruby'
+
+      if opts[:override]
+        tell "r. overriding \n    #{@target_dir}"
+        FileUtils.rm_rf(@target_dir) rescue nil
+      elsif File.exist?(@target_dir)
+        tell "r. ruby already present \n    #{@target_dir}"
+        return
+      end
+
       FileUtils.mkdir(TMP_DIR) rescue nil
 
       arc = locate_archive || download_archive
 
       raise("couldn't find ruby archive for #{@version}") unless arc
 
-      tell ". found ruby archive at \n    #{arc}"
+      tell "r. found ruby archive at \n    #{arc}"
 
       FileUtils.cp(arc, TMP_DIR) rescue nil
 
@@ -70,23 +75,23 @@ module Brig
 
       src_dir = File.join(TMP_DIR, "ruby-#{@version}")
 
-      tell ". extracted ruby source to \n    #{src_dir}"
+      tell "r. extracted ruby source to \n    #{src_dir}"
 
       conf_opts = "--prefix=#{@target_dir} --disable-install-doc"
 
       `cd #{src_dir} && ./configure #{conf_opts}`
 
-      tell ". configured with \n    #{conf_opts}"
+      tell "r. configured with \n    #{conf_opts}"
 
       `(cd #{src_dir} && make && make install) 2>&1`
 
-      tell ". built ruby to \n    #{@target_dir}"
+      tell "r. built ruby to \n    #{@target_dir}"
 
       `#{File.join(@target_dir, 'bin/gem')} install #{@gems}`
 
-      tell ". installed gems \n    #{@gems}"
+      tell "r. installed gems \n    #{@gems}"
 
-      tell ". ruby install done"
+      tell "r. ruby install done"
       tell "    weighs " + `du -sh #{@target_dir}`.strip.split(' ').first
       tell "    took #{Time.now - start}s"
     end

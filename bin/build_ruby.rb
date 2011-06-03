@@ -28,9 +28,12 @@ require 'brig'
 
 def puts_usage
   puts %{
-  sudo #{$0} [-v]
+  sudo #{$0} [-v] [-o]
 
     builds a Ruby into /brig_ruby
+
+    -v/--verbose : be verbose
+    -o/--override : nukes any previous /brig_ruby dir
   }
 end
 
@@ -40,7 +43,9 @@ if ARGV.include?('-h') or ARGV.include?('--help')
 end
 
 verbose = ARGV.include?('-v') || ARGV.include?('--verbose')
+override = ARGV.include?('-o') || ARGV.include?('--override')
 
 Brig.build_ruby(
-  :verbose => verbose)
+  :verbose => verbose,
+  :override => override)
 
