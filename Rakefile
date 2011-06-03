@@ -6,7 +6,6 @@ require 'rubygems/user_interaction' if Gem::RubyGemsVersion == '1.5.0'
 
 require 'rake'
 require 'rake/clean'
-require 'rake/rdoctask'
 #require 'rspec/core/rake_task'
 
 
