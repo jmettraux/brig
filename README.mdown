@@ -9,27 +9,40 @@ set of ruby tools for chroot on OSX / GNU/Linux
 
 ...
 
+
 ## running in a chroot
+
+Running ruby code in the chroot goes like :
+
+    brig = Brig.new('chroot_dir')
+    stdout, stderr = brig.run(ruby_code)
+
+Usually you want the return value of the ruby code (as a Ruby object).
 
     brig = Brig.new('chroot_dir')
     result = brig.eval(ruby_code)
+
+Please note that the return from the Ruby in the chroot is done thanks to JSON.
+
+If there was an error during the .eval call, a Brig::Runner::EvalError is emitted (this class has a #code and a #stderr accessors).
+
 
 ## building a chroot
 
 ### preparing a ruby for the chroot
 
-Grab a Ruby and untar it, cd into it and
+building a 1.9.2 Ruby for brig :
 
-    .configure --prefix=/ruby; make; sudo make install
+    sudo ./bin/build_ruby.rb -v
 
-Once the Ruby is compiled successfully, install at least a JSON gem and rufus-json in that ruby
+adding gems to the brig :
 
-  sudo /ruby/bin/gem install yajl-ruby rufus-json
+    sudo /brig_ruby/bin/gem install yajl-ruby rufus-json
 
 
 ### building
 
--v will make the building "verbose". It expects a Ruby install at /ruby
+-v will make the building "verbose".
 
     sudo ./bin/build.rb -v target
 
