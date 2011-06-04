@@ -76,6 +76,13 @@ module Brig
       FileUtils.rm_rf(@target_dir)
       FileUtils.mkdir(@target_dir)
 
+      FileUtils.cp(
+        File.join(File.dirname(__FILE__), '..', '..', 'scripts', 'brig_runner.sh'),
+        @target_dir.join('brig_runner.sh'))
+      `chmod a+x #{@target_dir.join('brig_runner.sh')}`
+
+      tell ". /brig_runner.sh"
+
       FileUtils.mkdir_p(@target_dir.join('etc/'))
       FileUtils.mkdir_p(@target_dir.join('home/brig/'))
 

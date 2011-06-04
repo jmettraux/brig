@@ -22,7 +22,7 @@ describe 'a brig' do
     stdout.strip.should == ''
 
     if Brig.uname == 'Darwin'
-      stderr.should match(/su - id: No such file or directory/)
+      stderr.should match(/Segmentation fault/)
     else
       stderr.should match(/must be run from a terminal/)
     end
