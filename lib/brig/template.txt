@@ -27,6 +27,7 @@ su
 
 sh
 bash
+tr
 
 id
 ls

@@ -20,13 +20,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+#
 # this file is a wrapper to execute calls in the chroot
+#
 
 RUBY=/brig_ruby/bin/ruby
 
 # ulimit/umask
 
-# TODO ...
+$1
+shift
 
 # run/eval/exec
 

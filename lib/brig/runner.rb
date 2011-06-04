@@ -60,7 +60,7 @@ module Brig
         [ '-u', DARWIN_USERNAME, chroot ] :
         [ chroot, 'su', '-', 'brig', '-c' ]
 
-      com += [ '/brig_runner.sh', command ]
+      com += [ '/brig_scripts/runner.sh', determine_limits, command ]
 
       popen(com, stdin, &block)
     end
@@ -83,6 +83,26 @@ module Brig
     end
 
     protected
+
+    def determine_limits
+
+      return '' if @opts[:nolimits]
+
+      mem = @opts[:ulimit_m] || 512
+      fds = @opts[:ulimit_n] || 256
+      dsk = @opts[:ulimit_f] || 1024 * 1024 * 2 # 512b blocks
+      vme = @opts[:ulimit_v] || 3000000
+      pup = @opts[:ulimit_u] || 512
+
+      [
+        #"ulimit -n #{fds}",
+        #"ulimit -m #{mem}",
+        #"ulimit -f #{dsk}",
+        #"ulimit -v #{vme}",
+        #"ulimit -u #{pup}",
+        'umask 077',
+      ].join('|')
+    end
 
     RUBY_EXE = '/brig_ruby/bin/ruby'
 

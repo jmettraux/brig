@@ -18,7 +18,7 @@ describe Brig do
 
     describe '.exec' do
 
-      it 'returns the stdout and stderr for a give command' do
+      it 'returns the stdout and stderr for a given command' do
 
         stdout, stderr = nil
 
@@ -101,7 +101,7 @@ describe Brig do
 
     describe '.exec' do
 
-      it 'returns the stdout and stderr for a give command' do
+      it 'returns the stdout and stderr for a given command' do
 
         stdout, stderr = nil
 

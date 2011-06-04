@@ -44,5 +44,29 @@ describe 'a brig' do
       stderr.should match(/must be run from a terminal/)
     end
   end
+
+  it 'enforces a 077 umask' do
+
+    stdout, stderr = nil
+
+    Brig.exec('umask', :chroot => 'spec_target') do |out, err|
+      stdout, stderr = out, err
+    end
+
+    stderr.should == ''
+    stdout.strip.should == '0077'
+  end
+
+  it 'sets no limits when :nolimits => true' do
+
+    stdout, stderr = nil
+
+    Brig.exec('umask', :chroot => 'spec_target', :nolimits => true) do |out, err|
+      stdout, stderr = out, err
+    end
+
+    stderr.should == ''
+    stdout.strip.should == '0022'
+  end
 end
 
