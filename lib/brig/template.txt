@@ -25,7 +25,7 @@
 
 su
 
-/bin/sh
+sh
 bash
 
 id
