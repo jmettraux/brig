@@ -3,7 +3,10 @@
 
     brig, noun, (...) • informal a prison, esp. on a warship.
 
-set of ruby tools for chroot on OSX / GNU/Linux
+Set of ruby tools for chroot on OSX / GNU/Linux
+
+It automatically uses [right_popen](https://github.com/rightscale/right_popen) if EventMachine is present and running.
+
 
 ## usage
 
@@ -51,7 +54,7 @@ adding gems to the brig :
 
 ## testing
 
-    sudo rspec spec/
+    rspec spec/
       # or simply
     rake
 

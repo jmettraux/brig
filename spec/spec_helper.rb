@@ -1,5 +1,7 @@
 
 require 'brig'
+require 'eventmachine'
+
 
 Dir[File.join(File.dirname(__FILE__), 'support/**/*.rb')].each do |f|
   require(f)

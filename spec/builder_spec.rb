@@ -24,7 +24,8 @@ describe Brig do
 
     it 'builds a chroot place' do
 
-      Brig.build('spec_target')
+      #Brig.build('spec_target')
+      build_brig # sudo : neeeeeed !
 
       File.exist?('spec_target').should == true
       File.directory?('spec_target').should == true

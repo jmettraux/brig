@@ -100,20 +100,56 @@ module Brig
       exec([ RUBY_EXE, '-e', program ], ruby_code, &block)
     end
 
+    #
+    # The right_popen callbacks go here
+    #
+    class RightTarget
+      def initialize(exit_block)
+        @exit_block = exit_block
+        @stdout = ''
+        @stderr = ''
+      end
+      def on_out(data)
+        @stdout << data
+      end
+      def on_err(data)
+        @stderr << data
+      end
+      def on_exit(status)
+        @exit_block.call(@stdout, @stderr)
+      end
+    end
+
     def popen(command, stdin=nil, &block)
 
-      # TODO if EM is present and running, use right_popen
+      # TODO : it might be good to leverage the process exitstatus
+      #        instead of assuming stderr.not_empty? => error
 
-      Open3.popen3(*command) do |si, so, se, wt|
+      if defined?(EM) and EM.reactor_running?
 
-        si.write(stdin) if stdin
-        si.flush
-        si.close
+        require 'right_popen'
 
-        stdout = so.read
-        stderr = se.read
+        RightScale.popen3(
+          :command => command,
+          :target => RightTarget.new(block),
+          :stdout_handler => :on_out,
+          :stderr_handler => :on_err,
+          :exit_handler => :on_exit,
+          :input => stdin)
 
-        block.call(stdout, stderr)
+      else
+
+        Open3.popen3(*command) do |si, so, se, wt|
+
+          si.write(stdin) if stdin
+          si.flush
+          si.close
+
+          stdout = so.read
+          stderr = se.read
+
+          block.call(stdout, stderr)
+        end
       end
     end
   end
