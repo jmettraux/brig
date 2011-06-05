@@ -54,14 +54,13 @@ module Brig
 
       chroot = @opts[:chroot] || 'target'
 
-      com = [ 'sudo', 'chroot' ]
-
-      com += Brig.uname == 'Darwin' ?
-        [ '-u', DARWIN_USERNAME, chroot ] :
-        [ chroot, 'su', '-', 'brig', '-c' ]
-
-      #com += [ '/brig_scripts/runner.sh', determine_limits, command ]
-      com << "/brig_scripts/runner.sh \"#{determine_limits}\" #{command}"
+      com = if Brig.uname == 'Darwin'
+        [ 'sudo', 'chroot', '-u', DARWIN_USERNAME, chroot,
+          '/brig_scripts/runner.sh', determine_limits, command ]
+      else
+        [ 'sudo', 'chroot', chroot, 'su', '-', 'brig', '-c',
+          "/brig_scripts/runner.sh \"#{determine_limits}\" #{command}" ]
+      end
 
       popen(com, stdin, &block)
     end
