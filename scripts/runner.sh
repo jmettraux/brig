@@ -28,8 +28,9 @@ RUBY=/brig_ruby/bin/ruby
 
 # ulimit/umask
 
-IFS=';'
+IFS='|'
 for x in $1; do
+  #echo ">$x<"
   eval $x
 done
 unset IFS
