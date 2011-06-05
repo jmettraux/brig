@@ -28,7 +28,15 @@ RUBY=/brig_ruby/bin/ruby
 
 # ulimit/umask
 
-$1
+IFS=';'
+for x in $1; do
+  eval $x
+done
+unset IFS
+  #
+  # the eval is necessary, without it bash believes umask/ulimit are
+  # commands (and not shell builtins)
+
 shift
 
 # run/eval/exec

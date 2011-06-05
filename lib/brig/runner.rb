@@ -94,14 +94,19 @@ module Brig
       vme = @opts[:ulimit_v] || 3000000
       pup = @opts[:ulimit_u] || 512
 
-      [
-        #"ulimit -n #{fds}",
-        #"ulimit -m #{mem}",
-        #"ulimit -f #{dsk}",
-        #"ulimit -v #{vme}",
-        #"ulimit -u #{pup}",
-        'umask 077',
-      ].join('|')
+      limits = [
+        "ulimit -n #{fds}",
+        "ulimit -m #{mem}",
+        "ulimit -f #{dsk}",
+        "ulimit -u #{pup}",
+        'umask 077'
+      ]
+
+      if Brig.uname == 'Linux'
+        limits << "ulimit -v #{vme}"
+      end
+
+      limits.join(';')
     end
 
     RUBY_EXE = '/brig_ruby/bin/ruby'
@@ -115,17 +120,21 @@ module Brig
     # The right_popen callbacks go here
     #
     class RightTarget
+
       def initialize(exit_block)
         @exit_block = exit_block
         @stdout = ''
         @stderr = ''
       end
+
       def on_out(data)
         @stdout << data
       end
+
       def on_err(data)
         @stderr << data
       end
+
       def on_exit(status)
         @exit_block.call(@stdout, @stderr)
       end
