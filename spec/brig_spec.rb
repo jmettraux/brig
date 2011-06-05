@@ -66,7 +66,11 @@ describe 'a brig' do
     end
 
     stderr.should == ''
-    stdout.strip.should == '512'
+    if Brig.uname == 'Darwin'
+      stdout.strip.should == '266'
+    else
+      stdout.strip.should == '512'
+    end
   end
 
   it 'sets no limits when :nolimits => true' do
