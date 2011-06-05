@@ -57,6 +57,18 @@ describe 'a brig' do
     stdout.strip.should == '0077'
   end
 
+  it 'enforces ulimit -u 512' do
+
+    stdout, stderr = nil
+
+    Brig.exec('ulimit -u', :chroot => 'spec_target') do |out, err|
+      stdout, stderr = out, err
+    end
+
+    stderr.should == ''
+    stdout.strip.should == '512'
+  end
+
   it 'sets no limits when :nolimits => true' do
 
     stdout, stderr = nil
