@@ -64,10 +64,12 @@ module Brig
 
       if @opts[:pool] != false
         @pool = Queue.new
-        Thread.new { reload }
+        reload_pool
       else
         @pool = nil
       end
+
+      @reloading_thread = nil
     end
 
     def exec(command, stdin=nil, &block)
@@ -105,17 +107,31 @@ module Brig
       end
     end
 
+    def close
+
+      @reloading_thread && @reloading_thread.exit
+    end
+
     protected
 
-    def reload
+    def reload_pool
 
-      batch_size = @opts[:batch_size] || 20
+      if @reloading_thread && @reloading_thread.status == false
+        @reloading_thread = nil
+      end
 
-      suf =  "_#{self.object_id}_#{$$}_#{Thread.current.object_id}"
+      @reloading_thread ||= Thread.new do
 
-      batch_size.times do |i|
-        @pool << :reload if i == (batch_size * 0.6).to_i
-        @pool << Brig.copy(@opts[:chroot_original], "#{suf}__#{i}")
+        batch_size = @opts[:batch_size] || 20
+
+        suf =  "_#{self.object_id}_#{$$}_#{Thread.current.object_id}"
+
+        batch_size.times do |i|
+          @pool << :reload if i == (batch_size * 0.6).to_i
+          @pool << Brig.copy(@opts[:chroot_original], "#{suf}__#{i}")
+        end
+
+        @reloading_thread = nil
       end
     end
 
@@ -134,10 +150,10 @@ module Brig
       root = @pool.pop
 
       if root == nil
-        Thread.new { reload }
+        reload_pool
         root = unpooled_chroot
       elsif root == :reload
-        Thread.new { reload }
+        reload_pool
         root = determine_chroot
       end
 

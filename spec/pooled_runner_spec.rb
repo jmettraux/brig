@@ -60,6 +60,9 @@ describe Brig::Runner do
       before(:all) do
         @runner = Brig::Runner.new(:chroot_original => 'spec_target')
       end
+      after(:all) do
+        @runner.close
+      end
 
       it 'prepares 20 copies in advance' do
 
