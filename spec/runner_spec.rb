@@ -11,7 +11,7 @@ describe Brig do
     build_brig
   end
   after(:all) do
-    nuke_brig
+    nuke_brigs
   end
 
   context 'without EM' do

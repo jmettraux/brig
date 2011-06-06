@@ -39,7 +39,14 @@ module Brig
 
   def self.eval(ruby_code, opts={})
 
-    Brig::Runner.new(opts.merge(:pool => false)).eval(ruby_code)
+    on_s = opts.delete(:on_success)
+    on_f = opts.delete(:on_failure)
+
+    Brig::Runner.new(
+      opts.merge(:pool => false)
+    ).eval(
+      ruby_code, :on_success => on_s, :on_failure => on_f
+    )
   end
 
   class Runner
@@ -55,7 +62,12 @@ module Brig
         end
       end
 
-      @pool = @opts[:pool] ? Queue.new : nil
+      if @opts[:pool] != false
+        @pool = Queue.new
+        Thread.new { reload }
+      else
+        @pool = nil
+      end
     end
 
     def exec(command, stdin=nil, &block)
@@ -81,14 +93,14 @@ module Brig
       do_run(ruby_code, false, &block)
     end
 
-    def eval(ruby_code)
+    def eval(ruby_code, callbacks)
 
       do_run(ruby_code, true) do |stdout, stderr|
 
         if stderr != ''
-          @opts[:on_failure].call(stderr, ruby_code)
+          callbacks[:on_failure].call(stderr, ruby_code)
         else
-          @opts[:on_success].call(Rufus::Json.load(stdout))
+          callbacks[:on_success].call(Rufus::Json.load(stdout))
         end
       end
     end

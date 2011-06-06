@@ -19,7 +19,7 @@ describe Brig do
   describe '.build' do
 
     after(:each) do
-      nuke_brig
+      nuke_brigs
     end
 
     it 'builds a chroot place' do

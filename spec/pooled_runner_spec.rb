@@ -8,7 +8,7 @@ describe Brig::Runner do
     build_brig
   end
   after(:all) do
-    nuke_brig
+    nuke_brigs
   end
 
   context 'when pooling' do
@@ -41,12 +41,43 @@ describe Brig::Runner do
 
     context 'without a pool' do
 
-      it 'flips burgers'
+      it 'runs in a oneshot copy' do
+
+        id = nil
+
+        Brig.exec(
+          'cat /THIS_BRIG.txt', :chroot_original => 'spec_target'
+        ) do |out, err|
+          id = out.strip
+        end
+
+        id.should_not match(/__\d+$/)
+      end
     end
 
     context 'with a pool' do
 
-      it 'flips burgers'
+      before(:all) do
+        @runner = Brig::Runner.new(:chroot_original => 'spec_target')
+      end
+
+      it 'prepares 20 copies in advance' do
+
+        sleep 7
+
+        @runner.instance_variable_get(:@pool).size.should be > 1
+      end
+
+      it 'runs each time in a different copy' do
+
+        ids = []
+
+        3.times do
+          @runner.exec('cat /THIS_BRIG.txt') { |out, err| ids << out.strip }
+        end
+
+        ids.collect { |i| i.split('_').last.to_i }.should == [ 0, 1, 2 ]
+      end
     end
   end
 end

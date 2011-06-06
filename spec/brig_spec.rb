@@ -8,7 +8,7 @@ describe 'a brig' do
     build_brig
   end
   after(:all) do
-    nuke_brig
+    nuke_brigs
   end
 
   it 'is tagged via BRIG.txt' do

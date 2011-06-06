@@ -12,11 +12,11 @@ module BrigHelper
     do_exec(builder, '-v', SPEC_TARGET)
   end
 
-  def nuke_brig
+  def nuke_brigs
 
     #FileUtils.rm_rf('spec_target')
-
-    do_exec('rm', '-fR', SPEC_TARGET)
+    #do_exec('rm', '-fR', "#{SPEC_TARGET}*")
+    `sudo rm -fR #{SPEC_TARGET}*`
   end
 
   protected
