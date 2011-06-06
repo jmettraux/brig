@@ -30,6 +30,20 @@ module Brig
     Brig::Builder.new.build(target_dir, opts)
   end
 
+  def self.copy(original, suffix)
+
+    orig = File.expand_path(original)
+    target = orig + suffix
+
+    FileUtils.cp_r(orig, target, :preserve => true)
+
+    File.open(File.join(target, 'THIS_BRIG.txt'), 'wb') do |f|
+      f.puts File.basename(target)
+    end
+
+    target
+  end
+
   class Builder
 
     include BuilderHelper

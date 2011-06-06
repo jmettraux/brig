@@ -21,6 +21,7 @@
 #++
 
 require 'open3'
+require 'thread'
 require 'rufus-json/automatic'
 
 
@@ -28,17 +29,17 @@ module Brig
 
   def self.exec(command, opts={}, &block)
 
-    Brig::Runner.new(opts).exec(command, &block)
+    Brig::Runner.new(opts.merge(:pool => false)).exec(command, &block)
   end
 
   def self.run(ruby_code, opts={}, &block)
 
-    Brig::Runner.new(opts).run(ruby_code, &block)
+    Brig::Runner.new(opts.merge(:pool => false)).run(ruby_code, &block)
   end
 
   def self.eval(ruby_code, opts={})
 
-    Brig::Runner.new(opts).eval(ruby_code)
+    Brig::Runner.new(opts.merge(:pool => false)).eval(ruby_code)
   end
 
   class Runner
@@ -53,21 +54,26 @@ module Brig
           alias :popen :right_popen
         end
       end
+
+      @pool = @opts[:pool] ? Queue.new : nil
     end
 
     def exec(command, stdin=nil, &block)
 
-      chroot = @opts[:chroot] || 'target'
+      root = determine_chroot
 
       com = if Brig.uname == 'Darwin'
-        [ 'sudo', 'chroot', '-u', 'nobody', chroot,
+        [ 'sudo', 'chroot', '-u', 'nobody', root,
           '/brig_scripts/runner.sh', determine_limits, command ]
       else
-        [ 'sudo', 'chroot', chroot, 'su', '-', 'brig', '-c',
+        [ 'sudo', 'chroot', root, 'su', '-', 'brig', '-c',
           "/brig_scripts/runner.sh \"#{determine_limits}\" #{command}" ]
       end
 
-      popen(com, stdin, &block)
+      popen(com, stdin) do |out, err|
+        block.call(out, err)
+        FileUtils.remove_dir(root, :force => false) if @opts[:chroot_original]
+      end
     end
 
     def run(ruby_code, &block)
@@ -88,6 +94,43 @@ module Brig
     end
 
     protected
+
+    def reload
+
+      batch_size = @opts[:batch_size] || 10
+
+      suf =  "_#{self.object_id}_#{$$}_#{Thread.current.object_id}"
+
+      batch_size.times do |i|
+        @pool << :reload if i == (batch_size * 0.6).to_i
+        @pool << Brig.copy(@opts[:chroot_original], "#{suf}__#{i}")
+      end
+    end
+
+    def unpooled_chroot
+
+      Brig.copy(
+        @opts[:chroot_original],
+        "_#{self.object_id}_#{$$}_#{Thread.current.object_id}")
+    end
+
+    def determine_chroot
+
+      return @opts[:chroot] || 'target' unless @opts[:chroot_original]
+      return unpooled_chroot unless @pool
+
+      root = @pool.pop
+
+      if root == nil
+        Thread.new { reload }
+        root = unpooled_chroot
+      elsif root == :reload
+        Thread.new { reload }
+        root = determine_chroot
+      end
+
+      root
+    end
 
     def determine_limits
 
