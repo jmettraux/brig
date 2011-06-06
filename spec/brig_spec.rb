@@ -11,6 +11,30 @@ describe 'a brig' do
     nuke_brig
   end
 
+  it 'is tagged via BRIG.txt' do
+
+    stdout, stderr = nil
+
+    Brig.exec('cat /BRIG.txt', :chroot => 'spec_target') do |out, err|
+      stdout, stderr = out, err
+    end
+
+    stderr.strip.should == ''
+    stdout.strip.should == 'spec_target'
+  end
+
+  it 'is tagged via THIS_BRIG.txt' do
+
+    stdout, stderr = nil
+
+    Brig.exec('cat /THIS_BRIG.txt', :chroot => 'spec_target') do |out, err|
+      stdout, stderr = out, err
+    end
+
+    stderr.strip.should == ''
+    stdout.strip.should == 'spec_target'
+  end
+
   it 'disallows su-ing for root' do
 
     stdout, stderr = nil

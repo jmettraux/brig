@@ -76,6 +76,16 @@ module Brig
       FileUtils.rm_rf(@target_dir)
       FileUtils.mkdir(@target_dir)
 
+      # /[THIS_]BRIG.txt
+
+      File.open(@target_dir.join('BRIG.txt'), 'wb') do |f|
+        f.puts File.basename(@target_dir)
+      end
+      FileUtils.cp(
+        @target_dir.join('BRIG.txt'), @target_dir.join('THIS_BRIG.txt'))
+
+      # /brig_scripts/
+
       FileUtils.mkdir(@target_dir.join('brig_scripts'))
 
       Dir[File.join(File.dirname(__FILE__), '../../scripts/*')].each do |path|
@@ -88,9 +98,10 @@ module Brig
         tell ". scripts: #{File.basename(path)}"
       end
 
-
       FileUtils.mkdir_p(@target_dir.join('etc/'))
       FileUtils.mkdir_p(@target_dir.join('home/brig/'))
+
+      # /etc/passwd
 
       if Brig.uname == 'Darwin'
         cp('/etc/passwd')
@@ -105,6 +116,8 @@ module Brig
         end
         # /etc/group ? seems not necessary
       end
+
+      # grab the template
 
       template = Builder.read_template(opts[:template])
 
@@ -124,6 +137,8 @@ module Brig
         end
         a
       }
+
+      # follow the template
 
       template.each do |item|
 
@@ -145,6 +160,8 @@ module Brig
           copy_app_or_lib(path)
         end
       end
+
+      # done
 
       tell
       tell "success"
