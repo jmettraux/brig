@@ -41,13 +41,18 @@ module Brig
     Brig::Runner.new(opts).eval(ruby_code)
   end
 
-  DARWIN_USERNAME = 'nobody'
-
   class Runner
 
     def initialize(opts)
 
       @opts = opts
+
+      if defined?(EM) and EM.reactor_running?
+        require 'right_popen'
+        class << self
+          alias :popen :right_popen
+        end
+      end
     end
 
     def exec(command, stdin=nil, &block)
@@ -55,7 +60,7 @@ module Brig
       chroot = @opts[:chroot] || 'target'
 
       com = if Brig.uname == 'Darwin'
-        [ 'sudo', 'chroot', '-u', DARWIN_USERNAME, chroot,
+        [ 'sudo', 'chroot', '-u', 'nobody', chroot,
           '/brig_scripts/runner.sh', determine_limits, command ]
       else
         [ 'sudo', 'chroot', chroot, 'su', '-', 'brig', '-c',
@@ -109,11 +114,26 @@ module Brig
       limits.join('|')
     end
 
-    RUBY_EXE = '/brig_ruby/bin/ruby'
-
     def do_run(ruby_code, json, &block)
 
       exec(json ? '_ruby_eval_' : '_ruby_run_', ruby_code, &block)
+    end
+
+    # The plain popen method. Uses Open3.
+    #
+    def popen(command, stdin, &block)
+
+      Open3.popen3(*command) do |si, so, se, wt|
+
+        si.write(stdin) if stdin
+        si.flush
+        si.close
+
+        stdout = so.read
+        stderr = se.read
+
+        block.call(stdout, stderr)
+      end
     end
 
     #
@@ -140,37 +160,18 @@ module Brig
       end
     end
 
-    def popen(command, stdin=nil, &block)
+    # The right_popen method, will be used instead of the plain #popen
+    # if EM is detected and has a reactor running.
+    #
+    def right_popen(command, stdin, &block)
 
-      # TODO : it might be good to leverage the process exitstatus
-      #        instead of assuming stderr.not_empty? => error
-
-      if defined?(EM) and EM.reactor_running?
-
-        require 'right_popen'
-
-        RightScale.popen3(
-          :command => command,
-          :target => RightTarget.new(block),
-          :stdout_handler => :on_out,
-          :stderr_handler => :on_err,
-          :exit_handler => :on_exit,
-          :input => stdin)
-
-      else
-
-        Open3.popen3(*command) do |si, so, se, wt|
-
-          si.write(stdin) if stdin
-          si.flush
-          si.close
-
-          stdout = so.read
-          stderr = se.read
-
-          block.call(stdout, stderr)
-        end
-      end
+      RightScale.popen3(
+        :command => command,
+        :target => RightTarget.new(block),
+        :stdout_handler => :on_out,
+        :stderr_handler => :on_err,
+        :exit_handler => :on_exit,
+        :input => stdin)
     end
   end
 end
