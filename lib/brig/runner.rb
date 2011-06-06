@@ -97,7 +97,7 @@ module Brig
 
     def reload
 
-      batch_size = @opts[:batch_size] || 10
+      batch_size = @opts[:batch_size] || 20
 
       suf =  "_#{self.object_id}_#{$$}_#{Thread.current.object_id}"
 

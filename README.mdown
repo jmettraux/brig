@@ -3,60 +3,100 @@
 
     brig, noun, (...) • informal a prison, esp. on a warship.
 
-Set of ruby tools for chroot on OSX / GNU/Linux
+Brig is a tool for building chroots and running Ruby code in them.
 
-It automatically uses [right_popen](https://github.com/rightscale/right_popen) if EventMachine is present and running.
+It runs code in the chroot via [.popen3](http://www.ruby-doc.org/stdlib/libdoc/open3/rdoc/classes/Open3.html#M001644) or via [right_popen](https://github.com/rightscale/right_popen) if EventMachine is present (and its reactor is running).
+
+The same chroot can be used over and over (:chroot) or it can be used as an 'original' (:chroot_original) and each code run is done in a clean copy of the original chroot.
 
 
 ## usage
 
-...
+a) build a chroot
+b) run code in it
+
+let's first look at running Ruby code.
 
 
 ## running in a chroot
 
-Running ruby code in the chroot goes like :
+Running Ruby code in the chroot goes like :
 
-    Brig.run(ruby_code, :chroot_dir => '/brig') do |stdout, stderr|
+    Brig.run(ruby_code, :chroot => '/brigs/alpha') do |stdout, stderr|
       p stdout, stderr
     end
 
 Usually you want the return value of the ruby code (as a Ruby object).
 
-    brig.eval(
+    Brig.eval(
       ruby_code,
-      :chroot_dir => '/brig',
+      :chroot => '/brigs/alpha',
       :on_success => lambda { |result| p [ :result, result ] },
       :on_failure => lambda { |stderr, code| p [ :issue, stderr ] })
 
 Please note that the return from the Ruby in the chroot is done thanks to JSON.
 
 
+### running in a fresh chroot copy
+
+Let's say you have an 'original chroot' at /brigs/alpha you want to run some Ruby code in a fresh copy of it (and discard the copy immediately) :
+
+    Brig.eval(
+      ruby_code,
+      :chroot_original => '/brigs/alpha',
+      :on_success => lambda { |result| p [ :result, result ] },
+      :on_failure => lambda { |stderr, code| p [ :issue, stderr ] })
+
+All good, but it too more than a second to run...
+
+
+### running in a pool of chroot copies
+
+It's time to create a runner (and its pool).
+
+    runner = Brig::Runner.new(
+      :chroot_original => '/brigs/alpha',
+      :batch_size => 20)
+
+    runner.eval(
+      ruby_code,
+      :on_success => lambda { |result| p [ :result, result ] },
+      :on_failure => lambda { |stderr, code| p [ :issue, stderr ] })
+
+The batch size is set to 20. The runner when initialized will immediately create 20 copies of the chroot at /brigs/alpha (in directories adjacent to the original, but with timestampy suffixes) and.
+
+After 2/3 of the batch has been consumed for running code, another batch of chroot copies will be prepared.
+
+In order to be thread-safe, the runner uses a Queue as a pivot between the consumption and the production of chroot copies.
+
+By default, the :batch_size option is set to 20.
+
+
 ## building a chroot
+
+This is a two steps operation. First, you need to compile a Ruby (1.9.2) and install gems for it. Second, you have to create the chroot itself.
+
+From what I've seen so far, a chroot on GNU/Linux should weigh 60MB (and take something like half a second to copy).
+
 
 ### preparing a ruby for the chroot
 
-building a 1.9.2 Ruby for brig :
+Building a 1.9.2 Ruby for brig (-v for verbose) :
 
     sudo ./bin/build_ruby.rb -v
 
-adding gems to the brig :
+Adding gems to the brig :
 
-    sudo /brig_ruby/bin/gem install yajl-ruby rufus-json
+    sudo /brig_ruby/bin/gem install gem_0 gem_1
 
 
 ### building
 
--v will make the building "verbose".
+This will build the chroot, stealing the /brig_ruby on its way :
 
-    sudo ./bin/build.rb -v target
+    sudo ./bin/build.rb -v /brigs/alpha
 
-
-## testing
-
-    rspec spec/
-      # or simply
-    rake
+-v is for 'verbose', it will print a small summary of the generated chroot at the end.
 
 
 ## issues
